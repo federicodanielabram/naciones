@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390px, initial-scale=1.0, user-scalable=no">
+<title>NACIONES</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preload" href="splash.jpg" as="image">
+<link rel="preload" href="logo.png" as="image">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { background:#000; display:flex; justify-content:center; align-items:center; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+
+#app {
+  width:390px; height:844px;
+  background:#0a0a1a;
+  position:relative; overflow:hidden;
+  box-shadow:0 0 60px rgba(0,0,0,0.9),0 0 0 1px #1a1a2e;
+}
+
+/* ── SCREENS ── */
+.screen { position:absolute; inset:0; display:none; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ── LOGIN SCREEN ── */
+#screen-login {
+  background:url('splash.jpg') center center / cover no-repeat;
+  align-items:stretch; justify-content:flex-start; gap:0; padding-bottom:0;
+}
+.login-logo {
+  display:none;
+  font-size:48px; font-weight:900; letter-spacing:8px;
+  color:#c8a84b;
+  text-shadow:0 0 40px rgba(200,168,75,0.4);
+  margin-bottom:8px;
+}
+.login-sub {
+  display:none;
+  font-size:11px; letter-spacing:3px; color:#444; text-transform:uppercase;
+  margin-bottom:60px;
+}
+.login-btn {
+  display:flex; align-items:center; gap:10px;
+  background:#fff; color:#111;
+  border:none; border-radius:12px;
+  padding:14px 28px; font-size:15px; font-weight:600;
+  cursor:pointer; transition:opacity 0.2s;
+}
+.login-btn:active { opacity:0.8; }
+.login-btn img { width:22px; height:22px; }
+.login-loading { font-size:12px; color:#555; margin-top:20px; }
+
+@keyframes lobby-fadein {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+#lobby-top.anim-in    { animation: lobby-fadein 0.45s ease both; }
+#lobby-bottom.anim-in { animation: lobby-fadein 0.45s ease 0.12s both; }
+
+/* ── LOBBY SCREEN ── */
+#screen-lobby {
+  background:url('splash.jpg') center center / cover no-repeat;
+}
+.lobby-header {
+  padding:16px 16px 12px;
+  border-bottom:1px solid rgba(200,168,75,0.15);
+  display:flex; align-items:center; gap:12px;
+}
+.lobby-avatar {
+  width:40px; height:40px; border-radius:50%;
+  object-fit:cover; border:2px solid rgba(200,168,75,0.3);
+  flex-shrink:0;
+}
+.lobby-avatar-init {
+  width:40px; height:40px; border-radius:50%;
+  background:#c0392b; display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:bold; color:#fff;
+  border:2px solid rgba(200,168,75,0.3); flex-shrink:0;
+}
+.lobby-shield {
+  width:36px; height:50px; border-radius:4px;
+  object-fit:cover; border:2px solid rgba(200,168,75,0.4);
+  flex-shrink:0; cursor:pointer;
+}
+.lobby-shield-init {
+  width:36px; height:50px; border-radius:4px;
+  background:#c0392b; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:bold; color:#fff;
+  border:2px solid rgba(200,168,75,0.4); flex-shrink:0; cursor:pointer;
+}
+/* ── USER MODAL ── */
+#modal-user {
+  position:absolute; inset:0; background:rgba(0,0,0,0.85);
+  display:none; align-items:flex-end; z-index:500;
+}
+#modal-user.open { display:flex; }
+.user-modal-inner {
+  background:#0d0d1f; border-top:1px solid rgba(200,168,75,0.2);
+  border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%;
+}
+.user-modal-title { font-size:14px; color:#c8a84b; letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; text-align:center; }
+.user-shield-picker {
+  width:80px; height:112px; border-radius:8px;
+  background:rgba(255,255,255,0.05); border:2px dashed rgba(200,168,75,0.3);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; margin:0 auto 20px; overflow:hidden; position:relative;
+}
+.user-shield-picker img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
+.user-shield-picker span { font-size:11px; color:#555; text-align:center; line-height:1.4; z-index:1; }
+.user-modal-label { font-size:11px; color:#555; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+.user-camera-btns { display:flex; gap:8px; margin-bottom:20px; }
+.user-camera-btn {
+  flex:1; padding:10px; border-radius:8px; border:1px solid rgba(200,168,75,0.2);
+  background:rgba(255,255,255,0.03); color:#888; font-size:12px; cursor:pointer; text-align:center;
+}
+.lobby-user-info { flex:1; }
+.lobby-user-name { font-size:15px; color:#e8e0d0; font-weight:600; }
+.lobby-user-email { font-size:11px; color:#555; }
+.lobby-signout { font-size:11px; color:#555; background:none; border:none; cursor:pointer; text-decoration:underline; }
+.btn-mute {
+  width:32px; height:32px; border-radius:50%;
+  border:1px solid rgba(200,168,75,0.3);
+  background:none; cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px;
+}
+.btn-mute:active { background:rgba(0,0,0,0.4); transform:scale(0.88); }
+.btn-user {
+  height:30px; padding:0 10px; border-radius:8px;
+  border:1px solid rgba(200,168,75,0.35);
+  background:none; cursor:pointer; flex-shrink:0;
+  color:#c8a84b; font-size:10px; font-weight:700; letter-spacing:1.5px;
+}
+.btn-user:active { background:rgba(200,168,75,0.1); transform:scale(0.93); }
+
+.lobby-title {
+  font-size:11px; letter-spacing:2px; color:#555; text-transform:uppercase;
+  padding:20px 16px 10px;
+}
+.lobby-btn {
+  margin:0 16px 12px;
+  background:linear-gradient(135deg,#c8a84b,#9e7c28);
+  color:#0a0a1a; border:none; border-radius:12px;
+  width:calc(100% - 32px); height:50px;
+  font-size:15px; font-weight:700; letter-spacing:1px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.lobby-btn:active { filter:brightness(0.85); }
+.lobby-btn-ghost {
+  background:none;
+  border:1px solid rgba(200,168,75,0.3);
+  color:#c8a84b;
+}
+.lobby-games-title {
+  font-size:11px; letter-spacing:2px; color:#555; text-transform:uppercase;
+  padding:16px 16px 10px;
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+.lobby-game-card {
+  margin:0 16px 10px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:14px;
+  cursor:pointer; transition:background 0.2s;
+}
+.lobby-game-card:active { background:rgba(255,255,255,0.06); }
+.lobby-game-name { font-size:14px; color:#e8e0d0; font-weight:600; margin-bottom:4px; }
+.lobby-game-meta { font-size:11px; color:#555; }
+.lobby-game-badge {
+  display:inline-block; font-size:10px; padding:2px 8px; border-radius:20px;
+  margin-top:6px;
+}
+.badge-tu-turno { background:rgba(200,168,75,0.15); color:#c8a84b; border:1px solid rgba(200,168,75,0.3); }
+.badge-esperando { background:rgba(255,255,255,0.05); color:#555; border:1px solid rgba(255,255,255,0.1); }
+.lobby-empty { text-align:center; color:#333; font-size:13px; padding:40px 16px; }
+
+
+@keyframes logo-glint {
+  0%   { left:-80% }
+  20%  { left:150% }
+  100% { left:150% }
+}
+.logo-glint-wrap {
+  position:absolute; top:185px; left:2.5%; width:95%;
+  aspect-ratio:777/289; pointer-events:none;
+  -webkit-mask-image:url(logo.png);
+  -webkit-mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;
+  mask-image:url(logo.png);
+  mask-size:100% 100%;
+  mask-repeat:no-repeat;
+}
+.logo-glint-wrap::after {
+  content:'';
+  position:absolute; top:0; bottom:0;
+  width:35%; left:-80%;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.55) 50%,transparent 70%);
+  mix-blend-mode:screen;
+  animation:logo-glint 4s ease-in-out infinite;
+  animation-delay:4s;
+  animation-fill-mode:backwards;
+}
+
+/* ── CREAR PARTIDA MODAL ── */
+#modal-crear {
+  position:absolute; inset:0; background:rgba(0,0,0,0.85);
+  display:none; align-items:flex-end; z-index:500;
+}
+#modal-crear.open { display:flex; }
+.modal-sheet {
+  width:100%; background:#0d0d1f;
+  border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(200,168,75,0.2);
+  padding:20px 16px 32px;
+}
+.modal-handle { width:36px; height:4px; background:#333; border-radius:2px; margin:0 auto 20px; }
+.modal-sheet-title { font-size:17px; color:#e8e0d0; font-weight:700; margin-bottom:20px; }
+.modal-input-label { font-size:11px; color:#555; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.modal-input {
+  width:100%; background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1); border-radius:10px;
+  color:#e8e0d0; font-size:15px; padding:12px 14px;
+  outline:none; margin-bottom:16px;
+}
+.modal-input:focus { border-color:rgba(200,168,75,0.4); }
+.modal-btns { display:flex; gap:10px; margin-top:8px; }
+.modal-btns .lobby-btn { margin:0; flex:1; width:auto; }
+
+/* ── TRANSITION OVERLAY ── */
+#transition-overlay {
+  position:absolute; inset:0; z-index:1000;
+  background:#000; overflow:hidden;
+  opacity:0; pointer-events:none; transition:opacity 0.5s ease;
+}
+#transition-overlay.tr-active { opacity:1; pointer-events:all; }
+
+/* ── GAME SCREEN ── */
+#screen-game { background:#0a0a1a; }
+
+#profilebar {
+  position:absolute; top:0; left:0; right:0; height:68px;
+  background:#06060f;
+  border-bottom:1px solid rgba(200,168,75,0.15);
+  z-index:300;
+  display:flex; align-items:center; padding:0 12px; gap:10px;
+}
+#profile-shield {
+  width:32px; height:45px; border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:bold; color:#fff;
+  flex-shrink:0; border:2px solid rgba(200,168,75,0.4);
+  overflow:hidden;
+}
+#profile-shield img { width:100%; height:100%; object-fit:cover; }
+#profile-names { display:flex; flex-direction:column; gap:1px; }
+#profile-nation { font-size:13px; color:#e8e0d0; font-weight:bold; }
+#profile-player { font-size:10px; color:#666; }
+
+#topbar {
+  position:absolute; top:68px; left:0; right:0; height:58px;
+  background:#06060f;
+  border-bottom:1px solid rgba(200,168,75,0.25);
+  z-index:300;
+  display:flex; align-items:center; padding:0 10px; gap:7px;
+}
+#turn-badge {
+  background:rgba(200,168,75,0.12); border:1px solid rgba(200,168,75,0.4);
+  color:#c8a84b; font-size:10px; padding:4px 9px;
+  border-radius:20px; white-space:nowrap; letter-spacing:0.5px; flex-shrink:0;
+}
+#player-status {
+  flex:1; text-align:center; font-size:10px; color:#999;
+  display:flex; align-items:center; justify-content:center; gap:5px; overflow:hidden;
+}
+.status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.top-icon-btn {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px; width:36px; height:36px;
+  font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+
+#map-area {
+  position:absolute; top:126px; left:0; right:0; bottom:197px;
+  overflow:hidden; background:#0a0e1a;
+  display:flex; align-items:center;
+}
+#map-img { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; }
+
+#bottombar {
+  position:absolute; bottom:0; left:0; right:0; height:197px;
+  background:linear-gradient(to top,rgba(4,4,12,0.99) 0%,rgba(6,6,15,0.95) 100%);
+  border-top:1px solid rgba(200,168,75,0.2);
+  z-index:100; padding:8px 12px 12px;
+  display:flex; flex-direction:column; gap:4px;
+}
+#resources-grid { display:flex; flex-direction:column; gap:2px; }
+.res-row { display:flex; align-items:center; gap:2px; }
+.res-icon { font-size:13px; width:18px; text-align:center; flex-shrink:0; }
+.res-name { font-size:8px; color:#666; text-transform:uppercase; letter-spacing:0.5px; width:36px; flex-shrink:0; }
+.bar-val { flex:1; display:flex; align-items:center; gap:3px; }
+.bar-track { flex:1; min-width:0; height:5px; background:rgba(255,255,255,0.06); border-radius:3px; position:relative; overflow:hidden; }
+.bar-bg { position:absolute; inset:0; border-radius:3px; }
+.bar-mask { position:absolute; top:0; right:0; bottom:0; background:#0a0e1a; border-radius:0 3px 3px 0; }
+.res-val { font-size:10px; color:#c8a84b; width:28px; text-align:right; font-family:monospace; flex-shrink:0; }
+.res-connector { font-size:9px; color:#3a3a5a; flex-shrink:0; margin:0 4px; letter-spacing:-1px; }
+.res-derived { display:flex; align-items:center; justify-content:flex-end; gap:4px; flex-shrink:0; white-space:nowrap; width:90px; }
+.res-d-left { display:flex; align-items:center; gap:3px; }
+.res-d-icon { font-size:11px; }
+.res-d-label { font-size:8px; color:#666; text-transform:uppercase; letter-spacing:0.5px; width:30px; }
+.res-d-val { font-size:10px; color:#c8a84b; font-family:monospace; min-width:24px; text-align:right; }
+
+#bottom-row {
+  display:flex; gap:8px; align-items:center; margin-top:4px; flex-shrink:0;
+}
+#btn-consejos {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:10px; width:44px; height:44px; font-size:20px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+#btn-jugar {
+  flex:1; background:linear-gradient(135deg,#c8a84b 0%,#9e7c28 100%);
+  border:none; color:#0a0a1a; font-weight:bold; font-size:11px;
+  letter-spacing:1px; height:44px; border-radius:9px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;
+}
+
+/* ── TERRITORIES ── */
+.terr {
+  position:absolute; transform:translate(-50%,-50%);
+  cursor:pointer; z-index:10;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  transition:transform 0.15s; overflow:visible;
+}
+.terr:active { transform:translate(-50%,-50%) scale(1.4); }
+.terr-flag {
+  width:22px; height:28px; border-radius:3px 3px 3px 0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:bold; color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.6);
+  border:1.5px solid rgba(255,255,255,0.3); position:relative; overflow:hidden;
+}
+.terr.mine .terr-flag {
+  border-color:rgba(255,255,255,0.7);
+  box-shadow:0 0 10px rgba(255,255,255,0.4),0 2px 8px rgba(0,0,0,0.6);
+}
+.terr-avatar {
+  position:absolute; top:-26px; left:50%; transform:translateX(-50%);
+  width:20px; height:20px; border-radius:50%;
+  background:rgba(20,20,40,0.88); border:1.5px solid rgba(255,255,255,0.55);
+  display:flex; align-items:center; justify-content:center;
+  font-size:7px; font-weight:bold; color:#fff;
+}
+.terr-dot {
+  width:5px; height:5px; border-radius:50%;
+  background:rgba(255,255,255,0.6); box-shadow:0 1px 3px rgba(0,0,0,0.5);
+}
+.terr-shield {
+  position:absolute; top:3px; left:3px;
+  width:calc(100% - 6px); height:calc(100% - 6px);
+  object-fit:cover; border-radius:2px; pointer-events:none;
+}
+
+/* ── PANEL NACION ── */
+#panel-nation {
+  position:absolute; bottom:0; left:0; right:0;
+  background:#0d0d1f; border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(200,168,75,0.3);
+  z-index:402; transform:translateY(100%);
+  transition:transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  max-height:75%; overflow-y:auto;
+}
+#panel-nation.open { transform:translateY(0); }
+.nation-hero { display:flex; align-items:center; gap:12px; padding:16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.big-flag { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold; color:#fff; flex-shrink:0; }
+.nation-shield { width:44px; height:62px; border-radius:4px; object-fit:cover; border:2px solid rgba(200,168,75,0.4); flex-shrink:0; }
+.nation-meta h3 { font-size:17px; color:#e8e0d0; margin-bottom:3px; }
+.nation-meta p  { font-size:10px; color:#777; }
+.biome-tag { display:inline-block; font-size:10px; padding:2px 8px; border-radius:10px; margin-top:4px; }
+.rel-tag { font-size:11px; padding:4px 10px; border-radius:20px; margin-left:auto; flex-shrink:0; }
+.rel-neutral { background:rgba(255,255,255,0.05); color:#555; }
+.rel-ally { background:rgba(39,174,96,0.15); color:#27ae60; }
+.rel-enemy { background:rgba(231,76,60,0.15); color:#e74c3c; }
+
+/* ── PANELS (bottom sheets) ── */
+.panel {
+  position:absolute; left:0; right:0; bottom:0;
+  background:#0f0f22;
+  border-top:1px solid rgba(200,168,75,0.3);
+  border-radius:18px 18px 0 0;
+  z-index:401; transform:translateY(100%);
+  transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height:78%; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.panel.open { transform:translateY(0); }
+#panel-jugar { max-height:92%; }
+
+/* top panels */
+.panel-top {
+  top:126px; bottom:auto;
+  border-top:none; border-bottom:1px solid rgba(200,168,75,0.3);
+  border-radius:0 0 18px 18px;
+  transform:translateY(calc(-100% - 126px)); max-height:70%;
+}
+.panel-top.open { transform:translateY(0); }
+#panel-news { max-height:52%; }
+#news-body {
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.35) 22%,rgba(0,0,0,0.75) 45%,black 68%);
+  mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,0.35) 22%,rgba(0,0,0,0.75) 45%,black 68%);
+}
+
+.panel-handle { width:38px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.panel-handle-top { width:38px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; margin:0 auto 10px; flex-shrink:0; }
+.panel-header {
+  padding:12px 16px 10px; font-size:13px; color:#c8a84b;
+  letter-spacing:1px; text-transform:uppercase;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex; align-items:center; gap:8px; flex-shrink:0;
+}
+.panel-header .close-btn {
+  margin-left:auto; color:#555; font-size:18px; cursor:pointer;
+  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; background:rgba(255,255,255,0.05); border:none;
+}
+.panel-body { padding:14px 16px 20px; overflow-y:auto; flex:1; }
+
+.panel-overlay {
+  position:absolute; inset:0; background:rgba(0,0,0,0.5);
+  z-index:399; display:none;
+}
+.panel-overlay.open { display:block; }
+
+/* JUGAR panel internals */
+.section-label {
+  font-size:9px; color:#c8a84b; text-transform:uppercase;
+  letter-spacing:1.5px; margin-bottom:8px; margin-top:14px;
+}
+.section-label:first-child { margin-top:0; }
+.divider { height:1px; background:rgba(255,255,255,0.05); margin:12px 0; }
+.agreement-list {
+  background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px; overflow:hidden; margin-bottom:8px;
+}
+.agreement-row {
+  display:flex; align-items:center; gap:8px; padding:9px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.04); font-size:11px;
+}
+.agreement-row:last-child { border-bottom:none; }
+.ag-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.ag-text { flex:1; color:#ccc; }
+.ag-active-dot { color:#27ae60; font-size:13px; flex-shrink:0; }
+.proposal-row {
+  display:flex; align-items:center; gap:8px; padding:9px 10px;
+  background:rgba(200,168,75,0.06); border:1px solid rgba(200,168,75,0.15);
+  border-radius:8px; margin-bottom:6px;
+}
+.proposal-info { flex:1; display:flex; flex-direction:column; gap:2px; }
+.proposal-who  { font-size:11px; color:#ddd; font-weight:bold; }
+.proposal-what { font-size:10px; color:#888; }
+.proposal-btns { display:flex; gap:5px; flex-shrink:0; }
+.war-banner {
+  background:rgba(192,57,43,0.1); border:1px solid rgba(192,57,43,0.25);
+  border-radius:8px; padding:10px; display:flex; align-items:center; gap:8px;
+  margin-bottom:8px; font-size:11px; color:#e74c3c;
+}
+.abtn {
+  padding:11px 8px; border-radius:9px; font-size:11px; cursor:pointer;
+  text-align:center; border:none; transition:filter 0.15s;
+}
+.abtn:active { filter:brightness(0.8); }
+.abtn-gold  { background:linear-gradient(135deg,#c8a84b,#9e7c28); color:#0a0a1a; font-weight:bold; }
+.abtn-ghost { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#ccc; }
+.abtn-red   { background:rgba(192,57,43,0.15); border:1px solid rgba(192,57,43,0.3); color:#e74c3c; }
+.abtn-green { background:rgba(39,174,96,0.15); border:1px solid rgba(39,174,96,0.3); color:#27ae60; }
+.abtn-full  { grid-column:span 2; }
+.confirm-btn {
+  width:100%; padding:14px;
+  background:linear-gradient(135deg,#c8a84b 0%,#8a6018 100%);
+  border:none; border-radius:11px; color:#0a0a1a; font-size:14px; font-weight:bold;
+  letter-spacing:1px; cursor:pointer; margin-top:18px; text-transform:uppercase;
+}
+.confirm-btn:disabled { opacity:0.4; cursor:default; }
+
+/* player picker */
+.picker-row {
+  display:flex; align-items:center; gap:10px; padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;
+}
+.picker-row:last-child { border-bottom:none; }
+.picker-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; color:#fff; flex-shrink:0; }
+.picker-info { flex:1; display:flex; flex-direction:column; gap:3px; }
+.picker-name  { font-size:13px; color:#ddd; }
+.picker-meta  { font-size:10px; color:#666; }
+
+/* SI panel */
+.si-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.si-rank { font-size:11px; color:#555; width:18px; text-align:center; flex-shrink:0; }
+.si-flag { width:20px; height:26px; border-radius:2px 2px 2px 0; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:bold; color:#fff; flex-shrink:0; }
+.si-name { font-size:11px; color:#ccc; flex:1; }
+.si-name em { font-size:8px; color:#666; font-style:normal; display:block; }
+.si-bar-track { flex:1; height:7px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
+.si-bar-fill { height:100%; border-radius:4px; }
+.si-val { font-size:10px; color:#c8a84b; width:28px; text-align:right; font-family:monospace; flex-shrink:0; }
+
+/* news cards */
+.news-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:13px 14px; margin-bottom:10px; cursor:pointer; }
+.news-card-header { display:flex; align-items:flex-start; gap:10px; }
+.news-turn-chip { background:rgba(200,168,75,0.12); color:#c8a84b; font-size:9px; padding:3px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; margin-top:2px; }
+.news-headline { flex:1; font-size:15px; color:#e8e0d0; line-height:1.45; font-weight:bold; }
+.news-arrow { color:#666; font-size:13px; flex-shrink:0; margin-top:3px; transition:transform 0.2s; }
+.news-card.expanded .news-arrow { transform:rotate(180deg); }
+.news-details { display:none; padding-top:10px; margin-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+.news-card.expanded .news-details { display:block; }
+.news-detail-item { font-size:12px; color:#999; padding:4px 0 4px 12px; border-left:2px solid rgba(200,168,75,0.3); margin-bottom:5px; line-height:1.45; }
+
+/* turno countdown */
+#turno-countdown { color:#e74c3c; font-size:11px; font-weight:bold; font-variant-numeric:tabular-nums; margin-left:4px; }
+
+/* batalla modal */
+#batalla-modal {
+  position:absolute; inset:0; background:rgba(0,0,0,0.88);
+  z-index:650; display:none; align-items:center; justify-content:center; padding:24px;
+}
+#batalla-modal.open { display:flex; }
+.batalla-sheet {
+  background:#0f0f22; border:1px solid rgba(200,168,75,0.35);
+  border-radius:18px; padding:28px 20px; width:100%;
+}
+.batalla-icon { font-size:48px; text-align:center; margin-bottom:10px; }
+.batalla-titular { font-size:14px; font-weight:bold; color:#e8e0d0; text-align:center; margin-bottom:14px; line-height:1.4; }
+.batalla-detalle { font-size:12px; color:#888; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05); line-height:1.4; }
+.batalla-detalle:last-child { border-bottom:none; }
+
+/* confirm modal */
+#confirm-modal {
+  position:absolute; inset:0; background:rgba(0,0,0,0.72);
+  z-index:500; display:none; align-items:center; justify-content:center; padding:24px;
+}
+#confirm-modal.open { display:flex; }
+.modal-card { background:#0f0f22; border:1px solid rgba(200,168,75,0.25); border-radius:18px; padding:28px 24px; text-align:center; }
+.modal-icon { font-size:36px; margin-bottom:12px; }
+.modal-title { font-size:16px; color:#e8e0d0; font-weight:bold; margin-bottom:8px; }
+.modal-desc { font-size:12px; color:#666; margin-bottom:20px; line-height:1.5; }
+.modal-btns { display:flex; gap:10px; }
+.modal-btns .abtn { flex:1; padding:12px 8px; }
+
+/* picker modal */
+#picker-modal {
+  position:absolute; inset:0; background:rgba(0,0,0,0.72);
+  z-index:502; display:none; align-items:flex-end;
+}
+#picker-modal.open { display:flex; }
+.picker-sheet {
+  width:100%; background:#0d0d1f; border-radius:20px 20px 0 0;
+  border-top:1px solid rgba(200,168,75,0.2); padding:20px 16px 32px;
+}
+.picker-title { font-size:15px; color:#e8e0d0; font-weight:700; margin-bottom:16px; }
+
+/* info rows del panel nacion */
+.info-line {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:13px; color:#aaa;
+}
+.info-line span:last-child, .info-line > div:last-child { color:#e8e0d0; font-size:12px; text-align:right; }
+
+/* ── TOAST ── */
+#toast {
+  position:absolute; bottom:210px; left:50%; transform:translateX(-50%);
+  background:rgba(20,20,40,0.95); border:1px solid rgba(200,168,75,0.3);
+  color:#e8e0d0; font-size:13px; padding:10px 18px;
+  border-radius:20px; white-space:nowrap; z-index:999;
+  opacity:0; transition:opacity 0.3s; pointer-events:none;
+}
+#toast.show { opacity:1; }
+
+/* ── ESPERAR PARTIDA ── */
+#screen-waiting {
+  background:#06060f; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; padding:32px;
+}
+.waiting-title { font-size:22px; color:#e8e0d0; font-weight:700; text-align:center; }
+.waiting-sub { font-size:13px; color:#555; text-align:center; }
+.waiting-players { width:100%; margin-top:8px; }
+.waiting-player-row {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.waiting-player-init {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:bold; color:#fff;
+}
+.waiting-player-name { flex:1; font-size:14px; color:#e8e0d0; }
+.waiting-player-status { font-size:11px; color:#555; }
+.waiting-code {
+  background:rgba(200,168,75,0.08); border:1px solid rgba(200,168,75,0.2);
+  border-radius:12px; padding:16px; width:100%; text-align:center; margin-top:8px;
+}
+.waiting-code-label { font-size:10px; color:#555; text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; }
+.waiting-code-val { font-size:28px; font-weight:900; color:#c8a84b; letter-spacing:6px; }
+.waiting-share-btn {
+  margin-top:12px; background:none; border:1px solid rgba(200,168,75,0.3);
+  color:#c8a84b; border-radius:10px; padding:10px 20px;
+  font-size:13px; cursor:pointer; width:100%;
+}
+.waiting-start-btn {
+  margin-top:8px; background:linear-gradient(135deg,#c8a84b,#9e7c28);
+  border:none; color:#0a0a1a; border-radius:10px; padding:14px 20px;
+  font-size:15px; font-weight:700; cursor:pointer; width:100%;
+}
+#lobby-games { overflow-y:auto; flex:1; }
+#modal-unirse, #modal-nombre-nacion { position:absolute;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:flex-end;z-index:500; }
+#modal-unirse.open, #modal-nombre-nacion.open { display:flex; }
+.fin-overlay { position:absolute;inset:0;z-index:700;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,0.92); }
+.fin-overlay.open { display:flex; }
+.fin-sheet { border-radius:18px;padding:28px 20px;width:100%;text-align:center; }
+.fin-icon { font-size:52px;margin-bottom:12px; }
+.fin-titulo { font-size:20px;font-weight:900;letter-spacing:2px;margin-bottom:8px; }
+.fin-sub { font-size:13px;color:#888;margin-bottom:16px;line-height:1.5; }
+.fin-ranking-row { display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);text-align:left; }
+.consejos-tip { padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05); }
+.consejos-tip-titulo { font-size:12px;color:#c8a84b;font-weight:bold;margin-bottom:4px; }
+.consejos-tip-texto { font-size:12px;color:#888;line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <audio id="lobby-music" src="lobby.mp3" loop preload="auto" autoplay muted></audio>
+  <audio id="partida-music" src="partida.mp3" loop preload="auto"></audio>
+  <audio id="logo-sound" src="logosound.mp3" preload="auto"></audio>
+  <div id="transition-overlay">
+    <img id="tr-img" src="" style="position:absolute;width:537px;left:-74px;top:149px;display:none">
+  </div>
+
+  <!-- LOGIN -->
+  <div id="screen-login" class="screen active">
+    <img src="logo.png" style="position:absolute;top:185px;left:2.5%;width:95%;height:auto;aspect-ratio:777/289">
+    <div style="flex:1"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding-bottom:60px;gap:0">
+      <button class="login-btn" onclick="loginGoogle()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+        Entrar con Google
+      </button>
+      <div class="login-loading" id="login-loading"></div>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="screen-lobby" class="screen" style="justify-content:space-between">
+    <!-- Header + medallas arriba -->
+    <div id="lobby-top" style="background:rgba(6,6,15,0.97);height:182px;overflow:hidden;flex-shrink:0">
+      <div class="lobby-header">
+        <div id="lobby-shield" class="lobby-shield-init" onclick="openUserModal()">?</div>
+        <div class="lobby-user-info">
+          <div class="lobby-user-name" id="lobby-name">—</div>
+        </div>
+        <button class="btn-mute" id="btn-mute" onclick="toggleMute()">🔊</button>
+        <button class="btn-user" onclick="openUserModal()">USER</button>
+        <button class="lobby-signout" onclick="signOut()">Salir</button>
+      </div>
+      <div id="lobby-stats" style="display:flex;justify-content:center;gap:32px;padding:12px 16px;border-top:1px solid rgba(255,255,255,0.05)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:22px">🥇</span>
+          <span id="stat-oro" style="font-size:15px;font-weight:bold;color:#c8a84b;font-family:monospace">0</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:22px">🥈</span>
+          <span id="stat-plata" style="font-size:15px;font-weight:bold;color:#9e9e9e;font-family:monospace">0</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <span style="font-size:22px">🥉</span>
+          <span id="stat-bronce" style="font-size:15px;font-weight:bold;color:#a0634a;font-family:monospace">0</span>
+        </div>
+      </div>
+      <p id="frase-lobby" style="text-align:center;font-size:12px;color:#888;font-style:italic;margin:4px 16px 0;line-height:1.4;height:34px;overflow:hidden"></p>
+    </div>
+
+    <!-- Logo fijo con glint -->
+    <div class="logo-glint-wrap">
+      <img src="logo.png" style="width:100%;display:block">
+    </div>
+
+    <!-- Espacio central -->
+    <div style="flex:1"></div>
+
+    <!-- Sección inferior con fondo -->
+    <div id="lobby-bottom" style="background:rgba(6,6,15,0.97);border-top:1px solid rgba(200,168,75,0.15);display:flex;flex-direction:column;flex-shrink:0">
+      <div class="lobby-title">Nueva partida</div>
+      <button class="lobby-btn" onclick="openCrear()">⚔️ Crear partida</button>
+      <button class="lobby-btn lobby-btn-ghost" onclick="openUnirse()">🔗 Unirse con código</button>
+      <div class="lobby-games-title">Mi partida actual</div>
+      <div id="lobby-games"><div class="lobby-empty">No tenés partidas activas</div></div>
+    </div>
+  </div>
+
+  <!-- ESPERAR PARTIDA -->
+  <div id="screen-waiting" class="screen">
+    <div class="waiting-title" id="waiting-title">Sala de espera</div>
+    <div class="waiting-sub" id="waiting-sub">Esperando jugadores...</div>
+    <div class="waiting-code">
+      <div class="waiting-code-label">Código de partida</div>
+      <div class="waiting-code-val" id="waiting-code">—</div>
+    </div>
+    <button class="waiting-share-btn" onclick="compartirCodigo()">📤 Compartir por WhatsApp</button>
+    <div class="waiting-players" id="waiting-players"></div>
+    <button class="waiting-start-btn" id="btn-iniciar" style="display:none" onclick="iniciarPartida()">Iniciar partida</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="screen-game" class="screen">
+    <div id="profilebar">
+      <div id="profile-shield"></div>
+      <div id="profile-names">
+        <span id="profile-nation">—</span>
+        <span id="profile-player">—</span>
+      </div>
+      <button class="btn-mute" id="btn-mute-game" onclick="toggleMuteGame()" style="margin-left:auto">🔊</button>
+    </div>
+    <div id="topbar">
+      <div id="turn-badge">Turno 1</div>
+      <div id="player-status">
+        <span class="status-dot" style="background:#555"></span>
+        <span id="status-text">Cargando...</span>
+        <span id="turno-countdown" style="display:none"></span>
+      </div>
+      <button class="top-icon-btn" onclick="verUltimaBatalla()" title="Última batalla" id="btn-ultima-batalla" style="opacity:0.3">⚔️</button>
+      <div style="position:relative">
+        <button class="top-icon-btn" onclick="toggleTopPanel('news')" title="Noticias">📜</button>
+        <span id="news-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:#e74c3c;color:#fff;font-size:9px;font-weight:bold;border-radius:10px;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;pointer-events:none"></span>
+      </div>
+      <button class="top-icon-btn" onclick="toggleTopPanel('si')" title="Índice">📊</button>
+    </div>
+    <div id="map-area">
+      <div id="map-wrapper" style="position:relative;width:100%">
+        <img id="map-img" src="mapa.jpg" alt="Mapa" style="width:100%;height:auto;display:block">
+        <div id="map-territories"></div>
+      </div>
+    </div>
+    <div id="bottombar">
+      <div id="resources-grid">
+        <div class="res-row">
+          <span class="res-icon">🌲</span><span class="res-name">Madera</span>
+          <div class="bar-val"><div class="bar-track"><div class="bar-bg" style="background:#27ae60"></div><div class="bar-mask" id="m-madera"></div></div><span class="res-val" id="v-madera">0</span></div>
+          <span class="res-connector">→</span>
+          <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">🏠</span><span class="res-d-label">Techo</span></span><span class="res-d-val" id="d-madera">0</span></div>
+        </div>
+        <div class="res-row">
+          <span class="res-icon">🌾</span><span class="res-name">Alim.</span>
+          <div class="bar-val"><div class="bar-track"><div class="bar-bg" style="background:#f39c12"></div><div class="bar-mask" id="m-alimento"></div></div><span class="res-val" id="v-alimento">0</span></div>
+          <span class="res-connector">→</span>
+          <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">👥</span><span class="res-d-label">Hab.</span></span><span class="res-d-val" id="d-alimento">0</span></div>
+        </div>
+        <div class="res-row">
+          <span class="res-icon">⚙️</span><span class="res-name">Metal</span>
+          <div class="bar-val"><div class="bar-track"><div class="bar-bg" style="background:#7f8c8d"></div><div class="bar-mask" id="m-metal"></div></div><span class="res-val" id="v-metal">0</span></div>
+          <span class="res-connector">→</span>
+          <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">⚔️</span><span class="res-d-label">Ejérc.</span></span><span class="res-d-val" id="d-metal">0</span></div>
+        </div>
+        <div class="res-row">
+          <span class="res-icon">⛰️</span><span class="res-name">Piedra</span>
+          <div class="bar-val"><div class="bar-track"><div class="bar-bg" style="background:#8e44ad"></div><div class="bar-mask" id="m-piedra"></div></div><span class="res-val" id="v-piedra">0</span></div>
+          <span class="res-connector">→</span>
+          <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">🛡️</span><span class="res-d-label">Def.</span></span><span class="res-d-val" id="d-piedra">0</span></div>
+        </div>
+      </div>
+      <div id="bottom-row">
+        <button id="btn-consejos" onclick="abrirConsejos()">💡</button>
+        <button id="btn-jugar" onclick="openJugar()">⚔ JUGAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL NACION -->
+  <div class="panel-overlay" id="nation-overlay" onclick="closeNation()"></div>
+  <div id="panel-nation">
+    <div class="panel-handle"></div>
+    <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 0">
+      <span style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:1px">🏰 <span id="panel-nation-title">Nación</span></span>
+      <button onclick="closeNation()" style="background:none;border:none;color:#555;font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div id="nation-body" style="padding:0 0 24px"></div>
+  </div>
+
+  <!-- OVERLAY GENERAL -->
+  <div class="panel-overlay" id="panel-overlay" onclick="closePanels()"></div>
+
+  <!-- PANEL JUGAR -->
+  <div class="panel" id="panel-jugar">
+    <div class="panel-handle"></div>
+    <div class="panel-header">⚔ Tu turno — <span id="jugar-nombre"></span>
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="section-label">Acciones de este turno</div>
+      <div class="agreement-list" id="jugar-cola"></div>
+      <div class="divider"></div>
+      <div class="section-label">Propuestas recibidas</div>
+      <div id="jugar-propuestas"></div>
+      <div class="divider"></div>
+      <div class="section-label">Alianzas activas</div>
+      <div class="agreement-list" id="jugar-alianzas"></div>
+      <div class="divider"></div>
+      <button class="abtn abtn-ghost" style="width:100%;margin-bottom:6px" onclick="openPicker('comercial')">🤝 Proponer alianza comercial</button>
+      <button class="abtn abtn-ghost" style="width:100%;margin-bottom:6px" onclick="openPicker('militar')">🤝⚔️ Proponer alianza militar</button>
+      <button class="abtn abtn-ghost" id="btn-trueque" style="width:100%;margin-bottom:6px" onclick="openPicker('trueque')">📦 Proponer trueque</button>
+      <button class="abtn abtn-red" id="btn-atacar" style="width:100%;margin-bottom:4px" onclick="openPicker('ataque')">⚔️ Declarar guerra</button>
+      <button class="abtn abtn-ghost" id="btn-asilo" style="width:100%;margin-bottom:4px;display:none" onclick="openPicker('asilo')">🏳️ Pedir asilo</button>
+      <div class="divider"></div>
+      <button class="confirm-btn" id="btn-siguiente" onclick="siguienteTurno()">✓ Confirmar turno</button>
+    </div>
+  </div>
+
+  <!-- PANEL NOTICIAS (top) -->
+  <div class="panel panel-top" id="panel-news">
+    <div class="panel-header">📜 Noticias <button class="close-btn" onclick="closePanels()">✕</button></div>
+    <div class="panel-handle-top"></div>
+    <div class="panel-body" id="news-body"></div>
+  </div>
+
+  <!-- PANEL SI (top) -->
+  <div class="panel panel-top" id="panel-si">
+    <div class="panel-header">📊 Índice de Supremacía <button class="close-btn" onclick="closePanels()">✕</button></div>
+    <div class="panel-handle-top"></div>
+    <div class="panel-body" id="si-body"></div>
+  </div>
+
+  <!-- PICKER MODAL -->
+  <div id="picker-modal" onclick="if(event.target===this)document.getElementById('picker-modal').classList.remove('open')">
+    <div class="picker-sheet">
+      <div class="panel-handle" style="margin-bottom:12px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="picker-title" id="picker-title" style="margin-bottom:0">Elegí un jugador</div>
+        <button onclick="document.getElementById('picker-modal').classList.remove('open')" style="background:none;border:none;color:#555;font-size:20px;cursor:pointer;padding:0 4px">✕</button>
+      </div>
+      <div id="picker-list"></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- MODAL BATALLA -->
+  <div id="batalla-modal">
+    <div class="batalla-sheet">
+      <div class="batalla-icon" id="batalla-icon">⚔️</div>
+      <div class="batalla-titular" id="batalla-titular"></div>
+      <div id="batalla-detalles"></div>
+      <button class="confirm-btn" style="margin-top:20px;width:100%" onclick="cerrarBatalla()">Aceptar</button>
+    </div>
+  </div>
+
+  <!-- CONFIRM MODAL -->
+  <div id="confirm-modal">
+    <div class="modal-card">
+      <div class="modal-icon" id="confirm-icon">⚠️</div>
+      <div class="modal-title" id="confirm-title">¿Estás seguro?</div>
+      <div class="modal-desc" id="confirm-desc"></div>
+      <div class="modal-btns">
+        <button class="abtn abtn-ghost" style="flex:1;padding:12px" onclick="hideConfirm()">Cancelar</button>
+        <button class="abtn abtn-red" style="flex:1;padding:12px" id="confirm-ok">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VICTORIA -->
+  <div id="modal-victoria" class="fin-overlay">
+    <div class="fin-sheet" style="background:#0f0f22;border:1px solid rgba(200,168,75,0.5)">
+      <div class="fin-icon">🏆</div>
+      <div class="fin-titulo" style="color:#c8a84b" id="victoria-titulo">¡VICTORIA!</div>
+      <div class="fin-sub" id="victoria-sub"></div>
+      <div id="victoria-ranking" style="margin-bottom:16px"></div>
+      <button class="confirm-btn" onclick="volverLobby()">Volver al lobby</button>
+    </div>
+  </div>
+
+  <!-- ELIMINADO -->
+  <div id="modal-eliminado" class="fin-overlay" style="background:rgba(0,0,0,0.88)">
+    <div class="fin-sheet" style="background:#0f0f22;border:1px solid rgba(192,57,43,0.5)">
+      <div class="fin-icon">🏳️</div>
+      <div class="fin-titulo" style="color:#e74c3c">ELIMINADO</div>
+      <div class="fin-sub" id="eliminado-sub">Tu nación cayó sin retorno.</div>
+      <button class="confirm-btn" style="background:linear-gradient(135deg,#c0392b,#8b2019)" onclick="volverLobby()">Volver al lobby</button>
+    </div>
+  </div>
+
+  <!-- ASILO REVIEW (para el asilado) -->
+  <div id="modal-asilo-review" class="fin-overlay" style="background:rgba(0,0,0,0.88)">
+    <div class="fin-sheet" style="background:#0f0f22;border:1px solid rgba(180,140,60,0.4);max-width:340px">
+      <div class="fin-icon" style="font-size:32px">🏳️</div>
+      <div class="fin-titulo" style="color:#c8a84b;font-size:16px">Tu anfitrión propone</div>
+      <div id="asilo-review-cola" style="margin:14px 0;font-size:13px;color:#aaa;text-align:left;line-height:1.8;padding:0 4px"></div>
+      <button class="confirm-btn" onclick="aprobarPropuestaAsilo()">✓ Aprobar</button>
+      <button class="abtn abtn-ghost" style="width:100%;margin-top:10px" onclick="rechazarPropuestaAsilo()">✕ Rechazar</button>
+    </div>
+  </div>
+
+  <!-- MODAL UNIRSE -->
+  <div id="modal-unirse" onclick="if(event.target===this)closeUnirse()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-sheet-title">Unirse a partida</div>
+      <div class="modal-input-label">Código de partida</div>
+      <input class="modal-input" id="input-codigo" placeholder="ej: ABC12" maxlength="10" style="text-transform:uppercase;letter-spacing:4px;font-size:22px;font-weight:bold;text-align:center">
+      <div class="modal-btns">
+        <button class="lobby-btn lobby-btn-ghost" style="flex:1;height:48px" onclick="closeUnirse()">Cancelar</button>
+        <button class="lobby-btn" style="flex:2;height:48px" onclick="confirmarCodigo()">Unirse →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOMBRE NACION (al unirse) -->
+  <div id="modal-nombre-nacion" onclick="if(event.target===this)closeNombreNacion()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-sheet-title">Tu nación</div>
+      <div class="modal-input-label">Nombre de tu nación</div>
+      <input class="modal-input" id="input-nombre-nacion-join" placeholder="ej: Imperio del Norte" maxlength="30">
+      <div class="modal-btns">
+        <button class="lobby-btn lobby-btn-ghost" style="flex:1;height:48px" onclick="closeNombreNacion()">Cancelar</button>
+        <button class="lobby-btn" style="flex:2;height:48px" id="btn-confirmar-nacion">Confirmar →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL CONSEJOS -->
+  <div class="panel" id="panel-consejos" style="max-height:82%">
+    <div class="panel-handle"></div>
+    <div class="panel-header">💡 Consejos estratégicos <button class="close-btn" onclick="closePanels()">✕</button></div>
+    <div class="panel-body">
+      <div class="consejos-tip"><div class="consejos-tip-titulo">⚔️ Combate</div><div class="consejos-tip-texto">Tu fuerza de ataque escala con soldados × bonus ofensivo. Los soldados son función de alimento, madera y metal. Acumulá metal antes de atacar.</div></div>
+      <div class="consejos-tip"><div class="consejos-tip-titulo">🛡️ Defensa</div><div class="consejos-tip-texto">La defensa escala con piedra. Las alianzas bélicas suman 40% de la defensa de tu aliado automáticamente. Si esperás ataque, apilá piedra.</div></div>
+      <div class="consejos-tip"><div class="consejos-tip-titulo">🤝 Alianzas comerciales</div><div class="consejos-tip-texto">Con 1 aliado: vos recibís 33% de tu producción especial, él 66%. Con 2 aliados: 22% cada uno. Con 3+ aliados perdés toda tu producción especial ese turno.</div></div>
+      <div class="consejos-tip"><div class="consejos-tip-titulo">🏆 Victoria</div><div class="consejos-tip-texto">Para ganar necesitás un territorio de cada bioma: Montaña ⛰️, Llanura 🌾, Selva 🌲 y Desierto ⚙️. Los jugadores posteriores tienen ese mismo turno para quitarte uno.</div></div>
+      <div class="consejos-tip"><div class="consejos-tip-titulo">📦 Trueques</div><div class="consejos-tip-texto">Los trueques se ejecutan cuando el receptor los acepta en su turno. Son bilaterales: ambas partes entregan lo acordado al mismo tiempo. Máximo 2 por vuelta.</div></div>
+      <div class="consejos-tip"><div class="consejos-tip-titulo">⏱️ Tiempo de turno</div><div class="consejos-tip-texto">Tenés 9 horas para jugar. Dos turnos consecutivos sin jugar y tu nación queda eliminada. Aunque no tengas plan, confirmá el turno para producir recursos.</div></div>
+      <div class="consejos-tip" style="border-bottom:none"><div class="consejos-tip-titulo">🏳️ Asilo</div><div class="consejos-tip-texto">Si perdés todos tus territorios podés pedir asilo una sola vez. El anfitrión te cede un territorio y comparten el control de las acciones ese turno.</div></div>
+    </div>
+  </div>
+
+  <!-- USER MODAL -->
+  <div id="modal-user">
+    <div class="user-modal-inner">
+      <div class="user-modal-title">Mi perfil</div>
+      <div class="user-shield-picker" id="shield-picker" onclick="document.getElementById('input-escudo').click()">
+        <span>📷<br>Subir escudo</span>
+      </div>
+      <input type="file" id="input-escudo" accept="image/*" style="display:none" onchange="onEscudoChange(event)">
+      <div class="user-camera-btns">
+        <div class="user-camera-btn" onclick="document.getElementById('input-escudo-cam').click()">📸 Cámara</div>
+        <div class="user-camera-btn" onclick="document.getElementById('input-escudo').click()">🖼 Galería</div>
+      </div>
+      <input type="file" id="input-escudo-cam" accept="image/*" capture="environment" style="display:none" onchange="onEscudoChange(event)">
+      <div class="user-modal-label">Nombre</div>
+      <input class="modal-input" id="input-username" placeholder="Tu nombre" maxlength="30" style="margin-bottom:16px">
+      <div style="display:flex;gap:10px">
+        <button class="lobby-btn lobby-btn-ghost" style="flex:1;height:48px" onclick="closeUserModal()">Cancelar</button>
+        <button class="lobby-btn" style="flex:2;height:48px" onclick="saveUserProfile()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL CREAR PARTIDA -->
+<div id="modal-crear" onclick="if(event.target===this)closeCrear()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-sheet-title">Nueva partida</div>
+    <div class="modal-input-label">Nombre de tu nación</div>
+    <input class="modal-input" id="input-nacion" placeholder="ej: Imperio del Norte" maxlength="30">
+    <div class="modal-input-label">Nombre de la partida</div>
+    <input class="modal-input" id="input-partida" placeholder="ej: Liga de amigos" maxlength="30">
+    <div class="modal-btns">
+      <button class="lobby-btn lobby-btn-ghost" style="flex:1;height:48px" onclick="closeCrear()">Cancelar</button>
+      <button class="lobby-btn" style="flex:2;height:48px" onclick="crearPartida()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut as fbSignOut }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, addDoc, collection, onSnapshot, updateDoc, arrayUnion, serverTimestamp, runTransaction, query, where }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCeRlOlX9iRpQ9HlGc-x3w7HLb9fnuPQhM",
+  authDomain: "naciones-e0d6f.firebaseapp.com",
+  projectId: "naciones-e0d6f",
+  storageBucket: "naciones-e0d6f.firebasestorage.app",
+  messagingSenderId: "514717306162",
+  appId: "1:514717306162:web:91a3658d7985b48e9a9b2b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+let currentPartidaId = null;
+let unsubPartida = null;
+const _escudos = {};
+const _customInits = {};
+
+window.addEventListener('unhandledrejection', e => {
+  const msg = (e.reason?.message || String(e.reason)).slice(0, 150);
+  if (window.toast) toast('❌ ' + msg);
+  else console.error('Unhandled rejection:', e.reason);
+});
+
+// ── TRANSITION FRAMES ──────────────────────────────────
+const _TR_COUNT = 22;
+const _TR_FPS = 15;
+const _trImgs = [];
+let _trAnimDone = Promise.resolve();
+for (let i = 1; i <= _TR_COUNT; i++) {
+  const img = new Image();
+  img.src = `frames/f${String(i).padStart(2,'0')}.jpg`;
+  _trImgs.push(img);
+}
+function _playTransitionFrames() {
+  let idx = 0;
+  const el = document.getElementById('tr-img');
+  el.style.display = 'block';
+  el.src = _trImgs[0].src;
+  const snd = document.getElementById('logo-sound');
+  const _sv = _volStates[_volIdx];
+  snd.volume = _sv.vol; snd.muted = _sv.muted;
+  snd.currentTime = 0; snd.play().catch(() => {});
+  let resolve;
+  _trAnimDone = new Promise(r => { resolve = r; });
+  const iv = setInterval(() => {
+    idx++;
+    if (idx >= _TR_COUNT) { clearInterval(iv); el.style.display = 'none'; resolve(); return; }
+    el.src = _trImgs[idx].src;
+  }, 1000 / _TR_FPS);
+  setTimeout(resolve, 3000);
+}
+
+// ── AUTH ──────────────────────────────────────────────
+window.loginGoogle = async () => {
+  document.getElementById('login-loading').textContent = 'Conectando...';
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    document.getElementById('login-loading').textContent = 'Error al conectar. Intentá de nuevo.';
+  }
+};
+
+window.signOut = async () => { await fbSignOut(auth); };
+
+// ── USER PROFILE ──────────────────────────────────────
+let _pendingEscudo = null;
+
+function updateShieldUI(escudo, init, color) {
+  const el = document.getElementById('lobby-shield');
+  if (escudo) {
+    el.outerHTML = `<img id="lobby-shield" class="lobby-shield" src="${escudo}" onclick="openUserModal()">`;
+  } else {
+    el.className = 'lobby-shield-init';
+    el.textContent = init || '?';
+    el.style.background = color || '#c0392b';
+    el.onclick = openUserModal;
+  }
+}
+
+window.openUserModal = async () => {
+  _pendingEscudo = null;
+  const usnap = await getDoc(doc(db, 'usuarios', currentUser.uid));
+  const ud = usnap.data() || {};
+  document.getElementById('input-username').value = ud.nombrePersonalizado || currentUser.displayName || '';
+  const picker = document.getElementById('shield-picker');
+  if (ud.escudo) {
+    picker.innerHTML = `<img src="${ud.escudo}">`;
+  } else {
+    picker.innerHTML = '<span>📷<br>Subir escudo</span>';
+  }
+  document.getElementById('modal-user').classList.add('open');
+};
+
+window.closeUserModal = () => {
+  document.getElementById('modal-user').classList.remove('open');
+  _pendingEscudo = null;
+};
+
+window.onEscudoChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const maxW = 160, maxH = 224;
+      const ratio = Math.min(maxW/img.width, maxH/img.height);
+      canvas.width = Math.round(img.width*ratio);
+      canvas.height = Math.round(img.height*ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      _pendingEscudo = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById('shield-picker').innerHTML = `<img src="${_pendingEscudo}">`;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.saveUserProfile = async () => {
+  const nombre = document.getElementById('input-username').value.trim();
+  if (!nombre) { toast('Ingresá un nombre'); return; }
+  const upd = { nombrePersonalizado: nombre };
+  if (_pendingEscudo) upd.escudo = _pendingEscudo;
+  await updateDoc(doc(db, 'usuarios', currentUser.uid), upd);
+  document.getElementById('lobby-name').textContent = nombre;
+  if (_pendingEscudo) {
+    updateShieldUI(_pendingEscudo, null, null);
+  }
+  closeUserModal();
+  toast('Perfil guardado');
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    await setDoc(doc(db, 'usuarios', user.uid), {
+      nombre: user.displayName,
+      email: user.email,
+      foto: user.photoURL || null,
+    }, { merge: true });
+    showLobby(user);
+    loadMisPartidas(user.uid);
+    setupNotifications();
+  } else {
+    currentUser = null;
+    showScreen('login');
+  }
+});
+
+// ── SCREENS ──────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+  const po = document.getElementById('panel-overlay');
+  if (po) po.classList.remove('open');
+  if (!_transitioning) {
+    const lobbyMusic = document.getElementById('lobby-music');
+    const partidaMusic = document.getElementById('partida-music');
+    if (id === 'login' || id === 'lobby') {
+      partidaMusic.pause(); partidaMusic.currentTime = 0;
+      lobbyMusic.play().catch(() => {});
+    } else if (id === 'game') {
+      lobbyMusic.pause();
+      partidaMusic.play().catch(() => {});
+    } else {
+      lobbyMusic.pause();
+      partidaMusic.pause();
+    }
+  }
+}
+
+const music = document.getElementById('lobby-music');
+music.play().catch(() => {});
+const _unlock = () => {
+  music.muted = false;
+  music.play().catch(() => {});
+};
+window.toggleMuteGame = () => {
+  _volIdx = (_volIdx + 1) % _volStates.length;
+  _applyVol();
+  const pm = document.getElementById('partida-music');
+  if (!pm.muted) pm.play().catch(() => {});
+};
+document.addEventListener('touchstart', _unlock, { once: true });
+document.addEventListener('click', _unlock, { once: true });
+
+const _sleep = ms => new Promise(r => setTimeout(r, ms));
+function _fadeVol(audio, from, to, ms) {
+  audio.volume = Math.max(0, Math.min(1, from));
+  const steps = 20, iv = ms/steps, delta = (to-from)/steps;
+  return new Promise(r => {
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      audio.volume = Math.max(0, Math.min(1, from + delta*i));
+      if (i >= steps) { clearInterval(t); audio.volume = Math.max(0,Math.min(1,to)); r(); }
+    }, iv);
+  });
+}
+let _transitioning = false;
+
+const _volStates = [
+  { vol:1,   muted:false, icon:'🔊' },
+  { vol:0.6, muted:false, icon:'🔉' },
+  { vol:1,   muted:true,  icon:'🔈' },
+];
+let _volIdx = 0;
+function _applyVol() {
+  const s = _volStates[_volIdx];
+  const lm = document.getElementById('lobby-music');
+  const pm = document.getElementById('partida-music');
+  const snd = document.getElementById('logo-sound');
+  lm.volume = s.vol; lm.muted = s.muted;
+  pm.volume = s.vol; pm.muted = s.muted;
+  snd.volume = s.vol; snd.muted = s.muted;
+  document.getElementById('btn-mute').textContent = s.icon;
+  document.getElementById('btn-mute-game').textContent = s.icon;
+}
+window.toggleMute = () => {
+  _volIdx = (_volIdx + 1) % _volStates.length;
+  _applyVol();
+  const lm = document.getElementById('lobby-music');
+  if (!lm.muted) lm.play().catch(() => {});
+};
+
+async function showLobby(user) {
+  const usnap = await getDoc(doc(db, 'usuarios', user.uid));
+  const ud = usnap.data() || {};
+  const nombre = ud.nombrePersonalizado || user.displayName;
+  document.getElementById('lobby-name').textContent = nombre;
+  const init = (nombre || '?')[0].toUpperCase();
+  updateShieldUI(ud.escudo || null, init, ud.color || '#c0392b');
+  const oro = ud.oro || 0, plata = ud.plata || 0, bronce = ud.bronce || 0;
+  document.getElementById('stat-oro').textContent = oro;
+  document.getElementById('stat-plata').textContent = plata;
+  document.getElementById('stat-bronce').textContent = bronce;
+  document.getElementById('frase-lobby').textContent = getFraseLobby(oro, plata, bronce);
+  showScreen('lobby');
+  ['lobby-top', 'lobby-bottom'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('anim-in');
+    void el.offsetWidth;
+    el.classList.add('anim-in');
+  });
+}
+
+function getFraseLobby(oro, plata, bronce) {
+  const total = oro + plata + bronce;
+  let pool;
+  if (total === 0) {
+    pool = [
+      'Tu nombre no figura en ninguna crónica. Vergonzoso.',
+      'Aún no has derramado sangre en batalla. ¿Qué esperas, cobarde?',
+      'Ni los bardos más borrachos cantan tu nombre.',
+      'Las gallinas de la aldea tienen más coraje que tú.',
+      'El reino ni sabe que existís.'
+    ];
+  } else if (oro >= 3) {
+    pool = [
+      'Los bardos ya cantan tu nombre en las tabernas.',
+      'El reino tiembla cuando pronuncian tu nombre.',
+      'Hasta tus enemigos te temen. Eso es poder.',
+      'Las crónicas ya no tienen páginas para tus victorias.',
+      'Tu nombre pesa más que una corona.'
+    ];
+  } else if (oro === 1 && plata === 0 && bronce === 0) {
+    pool = [
+      'Una victoria. Los grandes reyes empiezan así.',
+      'Por fin. El reino empieza a tomarte en serio.',
+      'Un oro. Ahora demostrá que no fue suerte.',
+      'El trono te ha visto una vez. ¿Volverás?',
+      'Ganaste una vez. Que no sea la última.'
+    ];
+  } else if (plata > oro && oro > 0) {
+    pool = [
+      'Siempre el segundón. ¿Cuándo serás el primero?',
+      'Tan cerca de la gloria. Tan lejos del trono.',
+      'El rey te saluda desde arriba. Vos desde abajo.',
+      'La plata es el premio de los que casi lo logran.',
+      'La victoria te roza y se va. Cada vez.'
+    ];
+  } else if (oro === 0 && plata === 0 && bronce > 0) {
+    pool = [
+      'Tercero. Ni victorioso ni digno de mención.',
+      'El bronce es el metal de los mediocres. Y el tuyo.',
+      'Llegás siempre tarde al banquete.',
+      'Peleás bien para perder.',
+      'El podio te conoce solo por abajo.'
+    ];
+  } else if (bronce > oro + plata) {
+    pool = [
+      'Has caído más veces de las que te levantaste.',
+      'Tu escudo está tan golpeado que ya no protege nada.',
+      'Los cuervos ya saben tu nombre de memoria.',
+      'La derrota te conoce mejor que la victoria.',
+      'Tu historial es una elegía, no una gesta.'
+    ];
+  } else {
+    pool = [
+      'Una carrera irregular. Los grandes no tienen excusas.',
+      'Victorias y derrotas. Tu historia no inspira terror.',
+      'El reino te recuerda. No precisamente con honor.',
+      'Podrías ser peor. Pero también mucho mejor.',
+      'Ni leyenda ni fracaso. Solo mediocridad.'
+    ];
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── LOBBY ─────────────────────────────────────────────
+let misPartidasActivas = [];
+
+function loadMisPartidas(uid) {
+  const q = query(collection(db, 'partidas'), where(`jugadores.${uid}.uid`, '==', uid));
+  onSnapshot(q, (snap) => {
+    const el = document.getElementById('lobby-games');
+    const activas = [];
+    snap.forEach(d => {
+      const p = d.data();
+      if (p.ordenTurnos?.includes(uid)) activas.push({ id: d.id, data: p });
+    });
+    misPartidasActivas = activas;
+    if (activas.length === 0) {
+      el.innerHTML = '<div class="lobby-empty">No tenés partidas activas</div>';
+      return;
+    }
+    el.innerHTML = '';
+    activas.forEach(({ id, data: p }) => {
+      const esMiTurno = p.ordenTurnos[p.turnoActualIdx] === uid;
+      const card = document.createElement('div');
+      card.className = 'lobby-game-card';
+      card.innerHTML = `
+        <div class="lobby-game-name">${p.nombre}</div>
+        <div class="lobby-game-meta">Turno ${p.turno || 1} · ${Object.keys(p.jugadores || {}).length} jugadores</div>
+        <span class="lobby-game-badge ${esMiTurno ? 'badge-tu-turno' : 'badge-esperando'}">
+          ${esMiTurno ? '⚔️ Tu turno' : p.estado === 'esperando' ? '⏳ Esperando' : 'Turno de otro'}
+        </span>`;
+      card.onclick = () => entrarPartida(id);
+      el.appendChild(card);
+    });
+  });
+}
+
+// ── CREAR PARTIDA ─────────────────────────────────────
+window.openCrear = () => {
+  if (misPartidasActivas.length > 0) { toast('Ya estás en una partida. Abandonala primero para crear una nueva.'); return; }
+  document.getElementById('modal-crear').classList.add('open');
+};
+window.closeCrear = () => { document.getElementById('modal-crear').classList.remove('open'); };
+window.openUnirse = () => {
+  if (misPartidasActivas.length > 0) { toast('Ya estás en una partida. Abandonala primero para unirte a otra.'); return; }
+  document.getElementById('input-codigo').value = '';
+  document.getElementById('modal-unirse').classList.add('open');
+  setTimeout(() => document.getElementById('input-codigo').focus(), 150);
+};
+window.closeUnirse = () => document.getElementById('modal-unirse').classList.remove('open');
+window.confirmarCodigo = () => {
+  const code = document.getElementById('input-codigo').value.trim().toUpperCase();
+  if (!code) { toast('Ingresá un código'); return; }
+  document.getElementById('modal-unirse').classList.remove('open');
+  entrarConCodigo(code);
+};
+
+window.crearPartida = async () => {
+  const nacion = document.getElementById('input-nacion').value.trim();
+  const nombre = document.getElementById('input-partida').value.trim();
+  if (!nacion || !nombre) { alert('Completá todos los campos'); return; }
+
+  const BIOMES = ['Montaña','Llanura','Selva','Desierto'];
+  const COLORS = ['#c0392b','#2980b9','#27ae60','#e67e22','#7b1fa2','#d35400','#16a085','#e91e63','#546e7a','#9c27b0'];
+  const biome = BIOMES[Math.floor(Math.random() * BIOMES.length)];
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+  const init = currentUser.displayName.substring(0,2);
+  const code = Math.random().toString(36).substring(2,7).toUpperCase();
+
+  const PROD = { Montaña:{madera:20,alimento:20,metal:20,piedra:50}, Llanura:{madera:20,alimento:60,metal:20,piedra:20}, Selva:{madera:60,alimento:20,metal:20,piedra:20}, Desierto:{madera:25,alimento:25,metal:60,piedra:20} };
+
+  const jugador = {
+    uid: currentUser.uid,
+    nombre: currentUser.displayName,
+    foto: currentUser.photoURL || null,
+    nacion, init, color, biome,
+    si: 0, turnOrder: 1,
+    recursos: { madera:200, alimento:200, metal:100, piedra:100 },
+    produccion: PROD[biome],
+    territorios: [],
+  };
+
+  const ref = await addDoc(collection(db, 'partidas'), {
+    nombre,
+    codigo: code,
+    estado: 'esperando',
+    turno: 1,
+    turnoActualIdx: 0,
+    ordenTurnos: [currentUser.uid],
+    creadoPor: currentUser.uid,
+    creadoEn: serverTimestamp(),
+    jugadores: { [currentUser.uid]: jugador },
+    alianzas: [],
+    guerras: [],
+    propuestas: [],
+    noticias: [{ turno:1, headline:'🏰 Partida creada — esperando jugadores', details:[] }],
+  });
+
+  closeCrear();
+  currentPartidaId = ref.id;
+  mostrarEspera(ref.id);
+};
+
+async function entrarConCodigo(code) {
+  const q = query(collection(db, 'partidas'), where('codigo', '==', code));
+  const snap = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+    .then(m => m.getDocs(q));
+  if (snap.empty) { toast('Código no encontrado'); return; }
+  entrarPartida(snap.docs[0].id);
+}
+
+let _joinPartidaId = null;
+let _joinPartidaData = null;
+
+async function entrarPartida(partidaId) {
+  currentPartidaId = partidaId;
+  const snap = await getDoc(doc(db, 'partidas', partidaId));
+  const p = snap.data();
+  if (!p) { toast('Partida no encontrada'); return; }
+  if (p.estado === 'esperando') {
+    if (!p.jugadores[currentUser.uid]) {
+      _joinPartidaId = partidaId;
+      _joinPartidaData = p;
+      document.getElementById('input-nombre-nacion-join').value = '';
+      document.getElementById('modal-nombre-nacion').classList.add('open');
+      document.getElementById('btn-confirmar-nacion').onclick = confirmarUnirse;
+      setTimeout(() => document.getElementById('input-nombre-nacion-join').focus(), 150);
+      return;
+    }
+    mostrarEspera(partidaId);
+  } else {
+    mostrarJuego(partidaId);
+  }
+}
+
+window.closeNombreNacion = () => document.getElementById('modal-nombre-nacion').classList.remove('open');
+
+async function confirmarUnirse() {
+  if (!_joinPartidaId || !_joinPartidaData) return;
+  const nacion = document.getElementById('input-nombre-nacion-join').value.trim() || currentUser.displayName;
+  document.getElementById('modal-nombre-nacion').classList.remove('open');
+  const p = _joinPartidaData;
+  const partidaId = _joinPartidaId;
+  _joinPartidaId = null; _joinPartidaData = null;
+  const BIOMES = ['Montaña','Llanura','Selva','Desierto'];
+  const COLORS = ['#c0392b','#2980b9','#27ae60','#e67e22','#7b1fa2','#d35400','#16a085','#e91e63','#546e7a','#9c27b0'];
+  const usedColors = Object.values(p.jugadores).map(j => j.color);
+  const color = COLORS.find(c => !usedColors.includes(c)) || COLORS[0];
+  const usedBiomes = Object.values(p.jugadores).map(j => j.biome);
+  const biome = BIOMES.find(b => !usedBiomes.includes(b)) || BIOMES[Math.floor(Math.random()*4)];
+  const PROD = { Montaña:{madera:20,alimento:20,metal:20,piedra:50}, Llanura:{madera:20,alimento:60,metal:20,piedra:20}, Selva:{madera:60,alimento:20,metal:20,piedra:20}, Desierto:{madera:25,alimento:25,metal:60,piedra:20} };
+  await updateDoc(doc(db, 'partidas', partidaId), {
+    [`jugadores.${currentUser.uid}`]: {
+      uid: currentUser.uid,
+      nombre: currentUser.displayName,
+      foto: currentUser.photoURL || null,
+      nacion, init: currentUser.displayName.substring(0,2),
+      color, biome, si:0,
+      turnOrder: Object.keys(p.jugadores).length + 1,
+      recursos: { madera:200, alimento:200, metal:100, piedra:100 },
+      produccion: PROD[biome],
+      territorios: [],
+    },
+    ordenTurnos: arrayUnion(currentUser.uid),
+  });
+  mostrarEspera(partidaId);
+}
+
+// ── SALA DE ESPERA ────────────────────────────────────
+function mostrarEspera(partidaId) {
+  showScreen('waiting');
+  if (unsubPartida) unsubPartida();
+  unsubPartida = onSnapshot(doc(db, 'partidas', partidaId), (snap) => {
+    const p = snap.data();
+    document.getElementById('waiting-code').textContent = p.codigo;
+    document.getElementById('waiting-title').textContent = p.nombre;
+    document.getElementById('waiting-sub').textContent = `${Object.keys(p.jugadores).length} jugador(es) unidos`;
+    const container = document.getElementById('waiting-players');
+    container.innerHTML = '';
+    Object.values(p.jugadores).forEach(j => {
+      const row = document.createElement('div');
+      row.className = 'waiting-player-row';
+      row.innerHTML = `
+        <div class="waiting-player-init" style="background:${j.color}">${j.init}</div>
+        <div class="waiting-player-name">${j.nombre}<br><span style="font-size:10px;color:#555">${j.nacion} · ${j.biome}</span></div>
+        <div class="waiting-player-status">${j.uid === p.creadoPor ? '👑' : '✓'}</div>`;
+      container.appendChild(row);
+    });
+    const esOrganizador = p.creadoPor === currentUser.uid;
+    document.getElementById('btn-iniciar').style.display = esOrganizador ? 'block' : 'none';
+    if (p.estado === 'jugando') mostrarJuego(partidaId);
+  });
+}
+
+window.eliminarPartida = (id, nombre) => {
+  showConfirm('🗑️', `¿Eliminar "${nombre}"?`, 'Esta acción no se puede deshacer.', async () => {
+    const { deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await deleteDoc(doc(db, 'partidas', id));
+    toast('Partida eliminada');
+  });
+};
+
+window.compartirCodigo = () => {
+  const code = document.getElementById('waiting-code').textContent;
+  const url = `https://wa.me/?text=Unite a mi partida de NACIONES con el código: *${code}*`;
+  window.open(url);
+};
+
+// ── TERRITORIOS ──────────────────────────────────────
+const TERR_POS = {
+  M1:'left:calc(44% - 4px);top:calc(9% - 2px)',
+  M2:'left:calc(29% + 1px);top:calc(18% - 7px)',
+  M3:'left:calc(23% + 1px);top:calc(32% - 7px)',
+  L1:'left:calc(55% + 1px);top:calc(30% - 9px)',
+  L2:'left:calc(53% - 2px);top:calc(46% - 12px)',
+  L3:'left:calc(81% - 1px);top:calc(44% - 12px)',
+  S1:'left:calc(76% - 3px);top:calc(17% - 8px)',
+  S2:'left:calc(62% - 1px);top:calc(81% - 24px)',
+  S3:'left:81%;top:calc(69% - 12px)',
+  D1:'left:calc(22% + 1px);top:calc(54% - 10px)',
+  D2:'left:calc(33% - 2px);top:calc(64% - 14px)',
+  D3:'left:calc(22% + 1px);top:calc(81% - 23px)',
+};
+const BIOME_TERRS = { Montaña:['M1','M2','M3'], Llanura:['L1','L2','L3'], Selva:['S1','S2','S3'], Desierto:['D1','D2','D3'] };
+const BIOME_FLAG  = { Montaña:'#e8e8e8', Llanura:'#8bc34a', Selva:'#2e7d32', Desierto:'#f57c00' };
+
+function asignarTerritorios(jugadores) {
+  const terrs = {};
+  Object.values(jugadores).forEach(j => {
+    const ts = BIOME_TERRS[j.biome];
+    if (ts && ts[0]) terrs[ts[0]] = j.uid;
+  });
+  return terrs;
+}
+
+function renderTerritorios(territorios, jugadores, miUid) {
+  const container = document.getElementById('map-territories');
+  container.innerHTML = '';
+  Object.entries(TERR_POS).forEach(([id, pos]) => {
+    const uid = territorios[id];
+    if (!uid) return;
+    const j = jugadores[uid];
+    if (!j) return;
+    const esMio = uid === miUid;
+    const div = document.createElement('div');
+    div.className = 'terr' + (esMio ? ' mine' : '');
+    div.style.cssText = pos;
+    div.dataset.uid = uid;
+    const escudoSrc = _escudos[uid] || '';
+    const avatarInit = _customInits[uid] || j.init;
+    div.innerHTML = `
+      <div class="terr-avatar" style="background:${j.color}">${avatarInit}</div>
+      <div class="terr-flag" style="background:${j.color}">
+        ${escudoSrc ? `<img class="terr-shield" src="${escudoSrc}">` : ''}
+      </div>
+      <div class="terr-dot"></div>`;
+    div.onclick = (e) => { e.stopPropagation(); abrirNacion(uid); };
+    container.appendChild(div);
+    if (!_escudos.hasOwnProperty(uid)) {
+      _escudos[uid] = null;
+      getDoc(doc(db, 'usuarios', uid)).then(snap => {
+        const ud = snap.data() || {};
+        const src = ud.escudo || null;
+        const init = (ud.nombrePersonalizado || '').slice(0,2).toUpperCase() || null;
+        _escudos[uid] = src;
+        _customInits[uid] = init;
+        const terrEl = document.querySelector(`.terr[data-uid="${uid}"]`);
+        if (!terrEl) return;
+        if (init) terrEl.querySelector('.terr-avatar').textContent = init;
+        if (src) {
+          const flag = terrEl.querySelector('.terr-flag');
+          const img = document.createElement('img');
+          img.className = 'terr-shield'; img.src = src;
+          flag.appendChild(img);
+        }
+      });
+    }
+  });
+}
+
+// ── JUEGO ─────────────────────────────────────────────
+let partidaData = null;
+
+let prevTurnoUid = undefined;
+
+async function mostrarJuego(partidaId) {
+  const _ovl = document.getElementById('transition-overlay');
+  const _lm = document.getElementById('lobby-music');
+  const _pm = document.getElementById('partida-music');
+  const udPromise = getDoc(doc(db, 'usuarios', currentUser.uid));
+  _ovl.classList.add('tr-active');
+  _playTransitionFrames();
+  await _fadeVol(_lm, _lm.volume, 0, 500);
+  _lm.pause(); _lm.volume = 1;
+  _transitioning = true; showScreen('game'); _transitioning = false;
+  if (unsubPartida) unsubPartida();
+  prevTurnoUid = undefined;
+  const usnap = await udPromise;
+  const ud = usnap.data() || {};
+  unsubPartida = onSnapshot(doc(db, 'partidas', partidaId), (snap) => {
+    try {
+    const p = snap.data();
+    if (!p) return;
+    partidaData = p;
+    const yo = p.jugadores[currentUser.uid];
+    if (!yo) return;
+
+    // Profilebar
+    const nombrePersonal = ud.nombrePersonalizado || yo.nombre;
+    document.getElementById('profile-nation').textContent = yo.nacion;
+    document.getElementById('profile-player').textContent = nombrePersonal;
+    const shield = document.getElementById('profile-shield');
+    if (ud.escudo) {
+      shield.innerHTML = `<img src="${ud.escudo}" style="width:100%;height:100%;object-fit:cover">`;
+      shield.style.background = 'transparent';
+    } else {
+      shield.textContent = (nombrePersonal || '?')[0].toUpperCase();
+      shield.style.background = yo.color;
+    }
+
+    // Topbar
+    document.getElementById('turn-badge').textContent = `Turno ${p.turno}`;
+    const esMiTurno = p.ordenTurnos[p.turnoActualIdx] === currentUser.uid;
+    const dot = document.querySelector('#player-status .status-dot');
+    const txt = document.getElementById('status-text');
+    if (esMiTurno) {
+      dot.style.background = '#27ae60';
+      txt.textContent = '¡Es tu turno!';
+      document.getElementById('btn-jugar').style.animation = 'jugarGlow 2.5s ease-in-out infinite';
+      stopCountdown();
+    } else {
+      const turnoDe = p.jugadores[p.ordenTurnos[p.turnoActualIdx]];
+      dot.style.background = turnoDe ? turnoDe.color : '#555';
+      txt.textContent = turnoDe ? `${turnoDe.nombre} jugando...` : 'Esperando...';
+      document.getElementById('btn-jugar').style.animation = 'none';
+      // Timeout check
+      const turnoInicio = p.turnoInicio?.toDate?.();
+      if (turnoInicio) {
+        const elapsed = Date.now() - turnoInicio.getTime();
+        const limitMs = 9 * 3600 * 1000;
+        const warningMs = 8 * 3600 * 1000;
+        if (elapsed >= limitMs) { triggerTimeoutTurno(p, partidaId); }
+        else if (elapsed >= warningMs) { startCountdown(limitMs - elapsed, partidaId, p); }
+        else { stopCountdown(); }
+      }
+    }
+
+    // Notificación push cuando pasa a ser mi turno
+    if (prevTurnoUid !== undefined && prevTurnoUid !== currentUser.uid && esMiTurno) {
+      notificarTurnoMio();
+    }
+    prevTurnoUid = p.ordenTurnos[p.turnoActualIdx];
+
+    // Modal de batalla pendiente de ver
+    const ub = p.ultimaBatalla;
+    const btnBatalla = document.getElementById('btn-ultima-batalla');
+    if (btnBatalla) btnBatalla.style.opacity = ub ? '1' : '0.3';
+    if (ub && !(ub.vistoPor||[]).includes(currentUser.uid)) {
+      mostrarBatallaModal(ub, currentUser.uid);
+    }
+
+    // Recursos
+    const r = yo.recursos;
+    const MAX = 1000;
+    ['madera','alimento','metal','piedra'].forEach(k => {
+      const v = r[k] || 0;
+      document.getElementById('v-' + k).textContent = v;
+      document.getElementById('m-' + k).style.width = Math.max(0,(1-v/MAX)*100)+'%';
+    });
+    const pop = Math.min(r.alimento, r.madera);
+    const soldiers = Math.floor(pop * Math.min(r.metal/(r.metal+300), 0.65));
+    const defense = Math.round(soldiers * (1 + r.piedra/(r.piedra+800)));
+    const techoEl = document.getElementById('d-madera');
+    techoEl.textContent = r.madera;
+    techoEl.style.color = r.madera < r.alimento ? '#e74c3c' : '#27ae60';
+    document.getElementById('d-alimento').textContent = pop;
+    document.getElementById('d-metal').textContent = soldiers;
+    document.getElementById('d-piedra').textContent = defense;
+
+    // Mapa
+    renderTerritorios(p.territorios || {}, p.jugadores, currentUser.uid);
+
+    // Badge noticias
+    const noticiasVistas = parseInt(localStorage.getItem(`nv_${currentPartidaId}`) || '0');
+    const noLeidas = Math.max(0, (p.noticias||[]).length - noticiasVistas);
+    const badge = document.getElementById('news-badge');
+    if (badge) { badge.textContent = noLeidas > 9 ? '9+' : noLeidas; badge.style.display = noLeidas > 0 ? 'block' : 'none'; }
+
+    // Victoria o eliminación
+    if (p.estado === 'terminada') {
+      if (!document.getElementById('modal-victoria').classList.contains('open')) mostrarVictoria(p);
+    } else {
+      const misTerrsCount = Object.values(p.territorios||{}).filter(u=>u===currentUser.uid).length;
+      const hasPendingAsilo = (p.propuestas||[]).some(pr=>pr.de===currentUser.uid&&pr.tipo==='asilo'&&pr.estado==='pendiente');
+      const enAsilo = p.asilo?.asilado === currentUser.uid;
+      if (misTerrsCount===0 && yo.asiloPedido && !hasPendingAsilo && !enAsilo) {
+        if (!document.getElementById('modal-eliminado').classList.contains('open'))
+          document.getElementById('modal-eliminado').classList.add('open');
+      }
+      // Asilado: mostrar review si el anfitrión mandó propuesta
+      if (enAsilo && p.asilo?.estado === 'esperando_asilado') {
+        if (!document.getElementById('modal-asilo-review').classList.contains('open'))
+          mostrarReviewAsilo(p);
+      }
+    }
+
+    // Botón JUGAR: solo activo en tu turno
+    const btnJugar = document.getElementById('btn-jugar');
+    if (esMiTurno) {
+      btnJugar.style.opacity = '1'; btnJugar.style.filter = 'none';
+      btnJugar.onclick = openJugar;
+    } else {
+      btnJugar.style.opacity = '0.35'; btnJugar.style.filter = 'grayscale(1)';
+      btnJugar.onclick = () => toast('Esperá tu turno');
+    }
+    } catch(e) { toast('❌ ' + (e.message || String(e)).slice(0, 120)); console.error('game snapshot error:', e); }
+  });
+  await _trAnimDone;
+  _ovl.classList.remove('tr-active');
+  _applyVol();
+  const _sv = _volStates[_volIdx];
+  _pm.volume = 0;
+  if (!_sv.muted) { _pm.play().catch(() => {}); _fadeVol(_pm, 0, _sv.vol, 800); }
+}
+
+// ── PANELS ───────────────────────────────────────────
+function esMiTurnoAhora() {
+  if (!partidaData || !currentUser) return false;
+  return partidaData.ordenTurnos[partidaData.turnoActualIdx] === currentUser.uid;
+}
+
+let activeTopPanel = null;
+
+function closePanels() {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('open'));
+  document.getElementById('panel-overlay').classList.remove('open');
+  document.getElementById('picker-modal').classList.remove('open');
+  activeTopPanel = null;
+}
+window.closePanels = closePanels;
+
+window.toggleTopPanel = (id) => {
+  const panel = document.getElementById('panel-' + id);
+  if (activeTopPanel === id) { closePanels(); return; }
+  closePanels();
+  if (id === 'news') {
+    buildNews();
+    localStorage.setItem(`nv_${currentPartidaId}`, (partidaData?.noticias||[]).length);
+    const badge = document.getElementById('news-badge');
+    if (badge) badge.style.display = 'none';
+  }
+  if (id === 'si') buildSI();
+  panel.classList.add('open');
+  document.getElementById('panel-overlay').classList.add('open');
+  activeTopPanel = id;
+  if (id === 'news') {
+    const b = document.getElementById('news-body');
+    requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
+  }
+};
+
+// ── QUEUE SYSTEM ─────────────────────────────────────
+let colaAcciones = [];
+let pickerTipo = null;
+let pickerTargetUid = null;
+let pickerOfertaPct = null;
+
+function mostrarCola() {
+  const el = document.getElementById('jugar-cola');
+  if (!colaAcciones.length) {
+    el.innerHTML = '<div class="agreement-row" style="color:#444;font-size:11px">Sin acciones pendientes</div>';
+    return;
+  }
+  el.innerHTML = colaAcciones.map((a, i) => {
+    let label = '';
+    if (a.tipo === 'propuesta') label = `📜 Proponer alianza ${a.subTipo==='comercial'?'comercial':'bélica'} con ${a.paraName}`;
+    else if (a.tipo === 'trueque') label = `📦 Ofrezco ${a.cantidadOfrece} ${a.recursoOfrece}, pido ${a.cantidadPide} ${a.recursoPide} → ${a.paraName}`;
+    else if (a.tipo === 'respuesta') label = `${a.respuesta==='aceptar'?'✓ Aceptar':'✕ Rechazar'} propuesta de ${a.deName}`;
+    else if (a.tipo === 'ruptura') label = `💔 Romper alianza ${a.alTipo==='trade'?'comercial':'bélica'} con ${a.aliadoName}`;
+    else if (a.tipo === 'ataque') label = `⚔️ Atacar a ${a.enemigoName}`;
+    else if (a.tipo === 'asilo') label = `🏳️ Pedir asilo a ${a.paraName}`;
+    return `<div class="agreement-row"><span class="ag-text" style="flex:1">${label}</span><button class="abtn abtn-ghost" style="padding:3px 7px;font-size:10px;margin-left:8px" onclick="quitarAccion(${i})">✕</button></div>`;
+  }).join('');
+}
+
+window.quitarAccion = (idx) => {
+  colaAcciones.splice(idx, 1);
+  mostrarCola();
+};
+
+window.openJugar = () => {
+  if (!partidaData) return;
+  const p = partidaData;
+  const yo = p.jugadores[currentUser.uid];
+  const esMiTurno = p.ordenTurnos[p.turnoActualIdx] === currentUser.uid;
+
+  document.getElementById('jugar-nombre').textContent = yo.nombre;
+  mostrarCola();
+
+  // Propuestas recibidas (siempre visibles, con estado si ya respondiste)
+  const propsPend = (p.propuestas||[]).filter(pr =>
+    pr.para === currentUser.uid && pr.estado === 'pendiente'
+  );
+  document.getElementById('jugar-propuestas').innerHTML = propsPend.length
+    ? propsPend.map(pr => {
+        const de = p.jugadores[pr.de];
+        let tipoLabel;
+        if (pr.tipo==='comercial') tipoLabel = '🤝 Alianza comercial';
+        else if (pr.tipo==='militar') tipoLabel = '🤝⚔️ Alianza bélica';
+        else if (pr.tipo==='asilo') tipoLabel = '🏳️ Solicitud de asilo';
+        else if (pr.tipo==='trueque') {
+          const d = pr.datos||{};
+          tipoLabel = d.recursoOfrece
+            ? `📦 Te ofrece ${d.cantidadOfrece} ${RES_ICON[d.recursoOfrece]||''} ${d.recursoOfrece}, pide ${d.cantidadPide} ${RES_ICON[d.recursoPide]||''} ${d.recursoPide}`
+            : `📦 Trueque: ${d.cantidad} ${d.recurso}`;
+        }
+        const enCola = colaAcciones.find(a => a.tipo==='respuesta' && a.propId===pr.id);
+        if (enCola) {
+          const color = enCola.respuesta==='aceptar' ? '#27ae60' : '#666';
+          const texto = enCola.respuesta==='aceptar' ? '✓ Aceptada' : '✕ Rechazada';
+          return `<div class="proposal-row">
+            <div class="proposal-info">
+              <span class="proposal-who">${de?.nombre||'?'} (${de?.biome||''})</span>
+              <span class="proposal-what">${tipoLabel}</span>
+            </div>
+            <div class="proposal-btns">
+              <span style="color:${color};font-size:11px;margin-right:4px">${texto}</span>
+              <button class="abtn abtn-ghost" style="padding:3px 8px;font-size:11px" onclick="deshacerRespuesta('${pr.id}')">↩</button>
+            </div>
+          </div>`;
+        }
+        return `<div class="proposal-row">
+          <div class="proposal-info">
+            <span class="proposal-who">${de?.nombre||'?'} (${de?.biome||''})</span>
+            <span class="proposal-what">${tipoLabel}</span>
+          </div>
+          <div class="proposal-btns">
+            <button class="abtn abtn-green" onclick="responderPropuesta('${pr.id}','aceptar')" ${!esMiTurno?'disabled':''}>✓</button>
+            <button class="abtn abtn-ghost" onclick="responderPropuesta('${pr.id}','rechazar')" ${!esMiTurno?'disabled':''}>✕</button>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="font-size:12px;color:#444;padding:6px 0">Sin propuestas</div>';
+
+  // Alianzas activas (excluir las que ya están en cola para romper)
+  const rupturas = new Set(colaAcciones.filter(a=>a.tipo==='ruptura').map(a=>`${a.aliadoUid}_${a.alTipo}`));
+  const alianzas = (p.alianzas||[]).filter(a => {
+    if (!(a.a===currentUser.uid||a.b===currentUser.uid)) return false;
+    const alUid = a.a===currentUser.uid?a.b:a.a;
+    return !rupturas.has(`${alUid}_${a.tipo}`);
+  });
+  document.getElementById('jugar-alianzas').innerHTML = alianzas.length
+    ? alianzas.map(a => {
+        const alUid = a.a===currentUser.uid?a.b:a.a;
+        const otro = p.jugadores[alUid];
+        const icon = a.tipo==='trade' ? '🤝' : '🤝⚔️';
+        return `<div class="agreement-row">
+          <div class="ag-dot" style="background:${otro?.color}"></div>
+          <span class="ag-text">${icon} ${otro?.nombre}</span>
+          <button class="abtn abtn-ghost" style="padding:3px 7px;font-size:10px;margin-left:auto" onclick="romperAlianza('${alUid}','${a.tipo}')" ${!esMiTurno?'disabled':''}>✕ Romper</button>
+        </div>`;
+      }).join('')
+    : '<div class="agreement-row" style="color:#444;font-size:11px">Ninguna</div>';
+
+  // Asilo: mostrar si tengo 0 territorios y no lo pedí aún
+  const misTerrs = Object.values(p.territorios||{}).filter(u=>u===currentUser.uid).length;
+  const puedePedirAsilo = misTerrs === 0 && !yo.asiloPedido && !colaAcciones.some(a=>a.tipo==='asilo') && !p.asilo;
+  const btnAsilo = document.getElementById('btn-asilo');
+  const btnAtacar = document.getElementById('btn-atacar');
+  if (btnAsilo) btnAsilo.style.display = puedePedirAsilo ? 'block' : 'none';
+  if (btnAtacar) btnAtacar.style.display = puedePedirAsilo ? 'none' : 'block';
+
+  // Info de asilo en panel
+  let asiloBanner = document.getElementById('asilo-banner');
+  if (!asiloBanner) {
+    asiloBanner = document.createElement('div');
+    asiloBanner.id = 'asilo-banner';
+    asiloBanner.style.cssText = 'font-size:12px;color:#c8a84b;background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.2);border-radius:6px;padding:8px 10px;margin-bottom:8px';
+    document.getElementById('btn-siguiente').parentNode.insertBefore(asiloBanner, document.getElementById('btn-siguiente'));
+  }
+  if (p.asilo?.anfitrion === currentUser.uid) {
+    const asilNombre = p.jugadores[p.asilo.asilado]?.nombre || '?';
+    const msg = p.asilo.estado === 'esperando_asilado'
+      ? `⏳ Esperando aprobación de ${asilNombre}...`
+      : p.asilo.estado === 'esperando_anfitrion'
+      ? `↩ ${asilNombre} rechazó tu propuesta. Modificá y reenviá.`
+      : `🏳️ Refugiado: ${asilNombre} co-decide tus acciones`;
+    asiloBanner.style.display = 'block';
+    asiloBanner.innerHTML = `${msg}<br><button onclick="romperAsilo()" style="background:none;border:none;color:#888;font-size:10px;cursor:pointer;padding:4px 0 0;text-decoration:underline">Romper asilo</button>`;
+  } else {
+    asiloBanner.style.display = 'none';
+  }
+
+  // Texto del botón confirmar según contexto
+  const btnSig = document.getElementById('btn-siguiente');
+  if (p.asilo?.anfitrion === currentUser.uid) {
+    btnSig.textContent = '📨 Proponer al refugiado';
+    btnSig.disabled = !esMiTurno || p.asilo.estado === 'esperando_asilado';
+  } else {
+    btnSig.textContent = '✓ Confirmar turno';
+    btnSig.disabled = !esMiTurno;
+  }
+
+  // Botones de acción: desactivar si no es mi turno
+  ['btn-trueque','btn-atacar','btn-asilo'].forEach(btnId => {
+    const el = document.getElementById(btnId);
+    if (el && el.style.display !== 'none') { el.disabled = !esMiTurno; el.style.opacity = esMiTurno ? '1' : '0.35'; }
+  });
+  document.querySelectorAll('#panel-jugar .panel-body > .abtn:not([id])').forEach(b => {
+    b.disabled = !esMiTurno; b.style.opacity = esMiTurno ? '1' : '0.35';
+  });
+
+  closePanels();
+  document.getElementById('panel-jugar').classList.add('open');
+  document.getElementById('panel-overlay').classList.add('open');
+};
+
+window.responderPropuesta = (propId, respuesta) => {
+  if (!esMiTurnoAhora()) { toast('Solo podés actuar en tu turno'); return; }
+  const prop = (partidaData.propuestas||[]).find(pr => pr.id === propId);
+  if (!prop) return;
+  const de = partidaData.jugadores[prop.de];
+  colaAcciones = colaAcciones.filter(a => !(a.tipo === 'respuesta' && a.propId === propId));
+  colaAcciones.push({ tipo:'respuesta', propId, respuesta, propTipo: prop.tipo, deUid: prop.de, deName: de?.nombre, datos: prop.datos });
+  toast(respuesta === 'aceptar' ? '✓ Aceptado — se ejecuta al confirmar' : '✕ Rechazado — se ejecuta al confirmar');
+  openJugar();
+};
+
+window.deshacerRespuesta = (propId) => {
+  colaAcciones = colaAcciones.filter(a => !(a.tipo === 'respuesta' && a.propId === propId));
+  openJugar();
+};
+
+window.romperAlianza = (aliadoUid, alTipo) => {
+  if (!esMiTurnoAhora()) { toast('Solo podés actuar en tu turno'); return; }
+  const otro = partidaData.jugadores[aliadoUid];
+  colaAcciones = colaAcciones.filter(a => !(a.tipo === 'ruptura' && a.aliadoUid === aliadoUid && a.alTipo === alTipo));
+  colaAcciones.push({ tipo:'ruptura', aliadoUid, aliadoName: otro?.nombre, alTipo });
+  toast('💔 Ruptura en cola — se ejecuta al confirmar');
+  openJugar();
+};
+
+window.openPicker = (tipo) => {
+  if (!esMiTurnoAhora()) { toast('Solo podés actuar en tu turno'); return; }
+  pickerTipo = tipo;
+  pickerOfertaPct = null;
+  const p = partidaData;
+  const titles = { comercial:'Proponer alianza comercial', militar:'Proponer alianza bélica', trueque:'Proponer trueque', ataque:'Declarar guerra', asilo:'Pedir asilo a...' };
+  document.getElementById('picker-title').textContent = titles[tipo] || 'Elegí un jugador';
+
+  const otros = Object.values(p.jugadores).filter(j => j.uid !== currentUser.uid);
+  document.getElementById('picker-list').innerHTML = otros.map(j => `
+    <div class="picker-row" onclick="elegirJugador('${j.uid}')">
+      <div class="picker-avatar" style="background:${j.color}">${j.init}</div>
+      <div class="picker-info">
+        <span class="picker-name">${j.nombre}</span>
+        <span class="picker-meta">${j.nacion} · ${j.biome}</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('picker-modal').classList.add('open');
+};
+
+window.elegirJugador = (uid) => {
+  if (!pickerTipo || !partidaData) return;
+  if (pickerTipo === 'trueque') { pickerTargetUid = uid; mostrarPorcentajePicker(); return; }
+  document.getElementById('picker-modal').classList.remove('open');
+  const otro = partidaData.jugadores[uid];
+  if (pickerTipo === 'ataque') {
+    if (colaAcciones.some(a => a.tipo === 'ataque')) { toast('Solo podés declarar una guerra por turno'); return; }
+    colaAcciones.push({ tipo:'ataque', enemigoUid: uid, enemigoName: otro?.nombre });
+    toast(`⚔️ Ataque a ${otro?.nombre} en cola`);
+  } else if (pickerTipo === 'asilo') {
+    colaAcciones = colaAcciones.filter(a => a.tipo !== 'asilo');
+    colaAcciones.push({ tipo:'asilo', para: uid, paraName: otro?.nombre });
+    toast(`🏳️ Solicitud de asilo a ${otro?.nombre} en cola`);
+  } else {
+    colaAcciones.push({ tipo:'propuesta', para: uid, paraName: otro?.nombre, subTipo: pickerTipo });
+    toast(`📜 Propuesta a ${otro?.nombre} en cola`);
+  }
+  openJugar();
+};
+
+function mostrarPorcentajePicker() {
+  const p = partidaData;
+  const yo = p.jugadores[currentUser.uid];
+  const otro = p.jugadores[pickerTargetUid];
+  const mySpecial = BIOME_SPECIAL[yo.biome];
+  const theirSpecial = BIOME_SPECIAL[otro?.biome];
+  const opciones = [0.15, 0.25, 0.50, 1.0];
+
+  if (pickerOfertaPct === null) {
+    // Paso 1: ¿cuánto ofrecés?
+    const stockMio = yo.recursos[mySpecial] || 0;
+    document.getElementById('picker-title').textContent = `¿Cuánto ofrecés? ${RES_ICON[mySpecial]} ${mySpecial} (tenés ${stockMio})`;
+    document.getElementById('picker-list').innerHTML = opciones.map(pct => {
+      const cantidad = Math.floor(stockMio * pct);
+      return `<div class="picker-row" onclick="setOfertaPct(${pct})">
+        <div class="picker-info">
+          <span class="picker-name">${Math.round(pct*100)}% → ${cantidad} ${mySpecial}</span>
+          <span class="picker-meta">para ${otro?.nombre}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    // Paso 2: ¿cuánto pedís a cambio?
+    const stockSuyo = otro?.recursos[theirSpecial] || 0;
+    const miCantidad = Math.floor((yo.recursos[mySpecial]||0) * pickerOfertaPct);
+    document.getElementById('picker-title').textContent = `¿Cuánto pedís? ${RES_ICON[theirSpecial]} ${theirSpecial} (${otro?.nombre} tiene ${stockSuyo})`;
+    document.getElementById('picker-list').innerHTML = [
+      `<div style="font-size:11px;color:#888;padding:6px 0 10px">Ofrecés: ${miCantidad} ${mySpecial}</div>`,
+      ...opciones.map(pct => {
+        const cantidad = Math.floor(stockSuyo * pct);
+        return `<div class="picker-row" onclick="proponerTrueque(${pct})">
+          <div class="picker-info">
+            <span class="picker-name">${Math.round(pct*100)}% → ${cantidad} ${theirSpecial}</span>
+            <span class="picker-meta">de ${otro?.nombre}</span>
+          </div>
+        </div>`;
+      })
+    ].join('');
+  }
+}
+
+window.setOfertaPct = (pct) => {
+  pickerOfertaPct = pct;
+  mostrarPorcentajePicker();
+};
+
+window.proponerTrueque = (pctPide) => {
+  document.getElementById('picker-modal').classList.remove('open');
+  const p = partidaData;
+  const yo = p.jugadores[currentUser.uid];
+  const otro = p.jugadores[pickerTargetUid];
+  const mySpecial = BIOME_SPECIAL[yo.biome];
+  const theirSpecial = BIOME_SPECIAL[otro?.biome];
+  const cantidadOfrece = Math.floor((yo.recursos[mySpecial]||0) * pickerOfertaPct);
+  const cantidadPide = Math.floor((otro?.recursos[theirSpecial]||0) * pctPide);
+  if (cantidadOfrece <= 0) { toast('No tenés suficiente para ofertar'); pickerOfertaPct = null; return; }
+  colaAcciones.push({
+    tipo:'trueque', para: pickerTargetUid, paraName: otro?.nombre,
+    recursoOfrece: mySpecial, cantidadOfrece, pctOfrece: pickerOfertaPct,
+    recursoPide: theirSpecial, cantidadPide, pctPide
+  });
+  pickerTargetUid = null; pickerOfertaPct = null;
+  toast('📦 Trueque en cola — se ejecuta al confirmar');
+  openJugar();
+};
+
+function resolverCombate(atUid, defUid, p) {
+  const yo = p.jugadores[atUid];
+  const enemigo = p.jugadores[defUid];
+  if (!yo || !enemigo) return null;
+  const rYo = yo.recursos, rEn = enemigo.recursos;
+  const popYo = Math.min(rYo.alimento||0, rYo.madera||0);
+  const soldYo = Math.floor(popYo * Math.min((rYo.metal||0)/((rYo.metal||0)+300), 0.65));
+  let ataque = soldYo * (1 + (rYo.metal||0)/((rYo.metal||0)+600));
+  const popEn = Math.min(rEn.alimento||0, rEn.madera||0);
+  const soldEn = Math.floor(popEn * Math.min((rEn.metal||0)/((rEn.metal||0)+300), 0.65));
+  let defensa = soldEn * (1 + (rEn.piedra||0)/((rEn.piedra||0)+800));
+  (p.alianzas||[]).filter(a=>(a.a===atUid||a.b===atUid)&&a.tipo==='mil').forEach(a => {
+    const al = p.jugadores[a.a===atUid?a.b:a.a]; if (!al) return;
+    const pop = Math.min(al.recursos.alimento||0, al.recursos.madera||0);
+    const sol = Math.floor(pop * Math.min((al.recursos.metal||0)/((al.recursos.metal||0)+300), 0.65));
+    ataque += sol * 0.5 * (1 + (al.recursos.metal||0)/((al.recursos.metal||0)+600));
+  });
+  (p.alianzas||[]).filter(a=>(a.a===defUid||a.b===defUid)&&a.tipo==='mil').forEach(a => {
+    const al = p.jugadores[a.a===defUid?a.b:a.a]; if (!al) return;
+    const pop = Math.min(al.recursos.alimento||0, al.recursos.madera||0);
+    const sol = Math.floor(pop * Math.min((al.recursos.metal||0)/((al.recursos.metal||0)+300), 0.65));
+    defensa += sol * 0.4 * (1 + (al.recursos.piedra||0)/((al.recursos.piedra||0)+800));
+  });
+  const ratio = ataque / (defensa || 1);
+  const nRYo = {...rYo}, nREn = {...rEn};
+  const extras = {};
+  let titular, detallesAtacante, detallesDefensor;
+  const ratioLine = `Ataque: ${Math.round(ataque)} vs Defensa: ${Math.round(defensa)} (ratio ${ratio.toFixed(2)}x)`;
+  if (ratio > 2) {
+    titular = `⚔️🏰 ${yo.nombre} conquistó territorio de ${enemigo.nombre}`;
+    nRYo.metal = Math.floor((rYo.metal||0)*0.9); nRYo.alimento = Math.floor((rYo.alimento||0)*0.9);
+    const terr = Object.entries(p.territorios||{}).find(([,u])=>u===defUid);
+    if (terr) extras[`territorios.${terr[0]}`] = atUid;
+    detallesAtacante = [ratioLine, `Conquistaste un territorio de ${enemigo.nombre}.`, `Perdés 10% metal y 10% de población.`];
+    detallesDefensor = [ratioLine, `${yo.nombre} te conquistó un territorio.`, `El atacante pierde 10% metal y 10% de población.`];
+  } else if (ratio > 1.1) {
+    titular = `⚔️ ${yo.nombre} venció a ${enemigo.nombre} — saqueo`;
+    nRYo.metal = Math.floor((rYo.metal||0)*0.9); nRYo.alimento = Math.floor((rYo.alimento||0)*0.95);
+    const sorted = Object.entries(rEn).sort((a,b)=>b[1]-a[1]);
+    if (sorted.length) {
+      const [rk, rv] = sorted[0];
+      const saqueo = Math.floor(rv*0.33);
+      nRYo[rk] = Math.min(1000,(rYo[rk]||0)+saqueo); nREn[rk] = rv-saqueo;
+      detallesAtacante = [ratioLine, `Saqueaste ${saqueo} ${rk} de ${enemigo.nombre}.`, `Perdés 10% metal y 5% de población.`];
+      detallesDefensor = [ratioLine, `${yo.nombre} te saqueó ${saqueo} ${rk}.`, `El atacante pierde 10% metal y 5% de población.`];
+    } else {
+      detallesAtacante = [ratioLine, `Victoria por saqueo.`, `Perdés 10% metal y 5% de población.`];
+      detallesDefensor = [ratioLine, `${yo.nombre} te saqueó.`];
+    }
+  } else if (ratio >= 0.85) {
+    titular = `⚔️ Empate entre ${yo.nombre} y ${enemigo.nombre}`;
+    nRYo.metal = Math.floor((rYo.metal||0)*0.85); nRYo.alimento = Math.floor((rYo.alimento||0)*0.92);
+    nREn.metal = Math.floor((rEn.metal||0)*0.85); nREn.alimento = Math.floor((rEn.alimento||0)*0.92);
+    detallesAtacante = [ratioLine, `Empate. Ambos pierden 15% metal y 8% de población.`];
+    detallesDefensor = [ratioLine, `Empate. Ambos pierden 15% metal y 8% de población.`];
+  } else {
+    titular = `🛡️ ${enemigo.nombre} repelió el ataque de ${yo.nombre}`;
+    nRYo.metal = Math.floor((rYo.metal||0)*0.8); nRYo.alimento = Math.floor((rYo.alimento||0)*0.9);
+    nREn.piedra = Math.floor((rEn.piedra||0)*0.85);
+    detallesAtacante = [ratioLine, `Ataque fallido. Perdés 20% metal y 10% de población.`];
+    detallesDefensor = [ratioLine, `Repeliste el ataque de ${yo.nombre}.`, `Perdés 15% de piedra.`];
+  }
+  return { titular, detalles: [ratioLine], detallesAtacante, detallesDefensor, nRYo, nREn, extras };
+}
+
+// ── EJECUTAR COLA ─────────────────────────────────────
+async function ejecutarCola(actorUid, cola, p, partidaId) {
+  const yo = p.jugadores[actorUid];
+  if (!yo) return;
+  const updates = {};
+  const noticias = [...(p.noticias||[])];
+  let propuestas = [...(p.propuestas||[])];
+  let alianzas   = [...(p.alianzas||[])];
+  let territorios = {...(p.territorios||{})};
+  let ordenTurnos = [...(p.ordenTurnos||[])];
+  let turnoActualIdx = p.turnoActualIdx;
+  let ordenCambio = false;
+  let ataqueHecho = false;
+  let batallaPendiente = null;
+
+  for (const acc of cola) {
+    if (acc.tipo === 'propuesta') {
+      const propId = `${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+      propuestas.push({ id:propId, de:actorUid, para:acc.para, tipo:acc.subTipo, estado:'pendiente' });
+    } else if (acc.tipo === 'trueque') {
+      const propId = `${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+      propuestas.push({ id:propId, de:actorUid, para:acc.para, tipo:'trueque', estado:'pendiente',
+        datos:{ recursoOfrece:acc.recursoOfrece, cantidadOfrece:acc.cantidadOfrece, recursoPide:acc.recursoPide, cantidadPide:acc.cantidadPide } });
+    } else if (acc.tipo === 'respuesta') {
+      propuestas = propuestas.map(pr => pr.id===acc.propId ? {...pr, estado:acc.respuesta==='aceptar'?'aceptada':'rechazada'} : pr);
+      if (acc.respuesta === 'aceptar') {
+        if (acc.propTipo === 'trueque') {
+          const r = acc.datos;
+          const miRec = updates[`jugadores.${actorUid}.recursos`] || {...yo.recursos};
+          const ofRec = updates[`jugadores.${acc.deUid}.recursos`] || {...(p.jugadores[acc.deUid]?.recursos||{})};
+          if (r.recursoOfrece) {
+            miRec[r.recursoOfrece] = Math.min(1000,(miRec[r.recursoOfrece]||0)+r.cantidadOfrece);
+            miRec[r.recursoPide]   = Math.max(0,(miRec[r.recursoPide]||0)-r.cantidadPide);
+            ofRec[r.recursoOfrece] = Math.max(0,(ofRec[r.recursoOfrece]||0)-r.cantidadOfrece);
+            ofRec[r.recursoPide]   = Math.min(1000,(ofRec[r.recursoPide]||0)+r.cantidadPide);
+            noticias.push({ turno:p.turno, headline:`📦 Trueque: ${acc.deName} entregó ${r.cantidadOfrece} ${RES_ICON[r.recursoOfrece]} y recibió ${r.cantidadPide} ${RES_ICON[r.recursoPide]}`, details:[] });
+          } else {
+            miRec[r.recurso] = Math.min(1000,(miRec[r.recurso]||0)+r.cantidad);
+            ofRec[r.recurso] = Math.max(0,(ofRec[r.recurso]||0)-r.cantidad);
+            noticias.push({ turno:p.turno, headline:`📦 Trueque: ${acc.deName} envió ${r.cantidad} ${RES_ICON[r.recurso]} a ${yo.nombre}`, details:[] });
+          }
+          updates[`jugadores.${actorUid}.recursos`] = miRec;
+          updates[`jugadores.${acc.deUid}.recursos`] = ofRec;
+        } else if (acc.propTipo === 'asilo') {
+          // Asilado sale del turno, se registra relación de co-decisión
+          const asilIdx = ordenTurnos.indexOf(acc.deUid);
+          ordenTurnos = ordenTurnos.filter(uid => uid !== acc.deUid);
+          if (asilIdx !== -1 && asilIdx < turnoActualIdx) turnoActualIdx--;
+          turnoActualIdx = Math.min(turnoActualIdx, Math.max(ordenTurnos.length - 1, 0));
+          ordenCambio = true;
+          updates.asilo = { asilado: acc.deUid, anfitrion: actorUid, estado: 'activo', propuesta: null };
+          noticias.push({ turno:p.turno, headline:`🏳️ ${yo.nombre} concedió asilo a ${acc.deName}`, details:[] });
+        } else {
+          const tipo = acc.propTipo==='comercial'?'trade':'mil';
+          alianzas.push({ a:acc.deUid, b:actorUid, tipo });
+          noticias.push({ turno:p.turno, headline:`${tipo==='trade'?'🤝 alianza comercial':'🤝⚔️ alianza bélica'}: ${acc.deName} y ${yo.nombre}`, details:[] });
+        }
+      }
+    } else if (acc.tipo === 'ruptura') {
+      alianzas = alianzas.filter(a => !(
+        ((a.a===actorUid&&a.b===acc.aliadoUid)||(a.b===actorUid&&a.a===acc.aliadoUid)) && a.tipo===acc.alTipo
+      ));
+      noticias.push({ turno:p.turno, headline:`💔 ${yo.nombre} rompió la alianza ${acc.alTipo==='trade'?'comercial':'bélica'} con ${acc.aliadoName}`, details:[] });
+    } else if (acc.tipo === 'asilo') {
+      const propId = `${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+      propuestas.push({ id:propId, de:actorUid, para:acc.para, tipo:'asilo', estado:'pendiente' });
+      updates[`jugadores.${actorUid}.asiloPedido`] = true;
+    } else if (acc.tipo === 'ataque') {
+      const snap = {...p, jugadores:{...p.jugadores}, alianzas, territorios};
+      if (updates[`jugadores.${actorUid}.recursos`]) snap.jugadores[actorUid] = {...snap.jugadores[actorUid], recursos: updates[`jugadores.${actorUid}.recursos`]};
+      const res = resolverCombate(actorUid, acc.enemigoUid, snap);
+      if (res) {
+        updates[`jugadores.${actorUid}.recursos`] = res.nRYo;
+        updates[`jugadores.${acc.enemigoUid}.recursos`] = res.nREn;
+        Object.entries(res.extras).forEach(([k,v]) => { updates[k]=v; if(k.startsWith('territorios.')) territorios[k.split('.')[1]]=v; });
+        noticias.push({ turno:p.turno, headline:res.titular, details:res.detalles });
+        ataqueHecho = true;
+        batallaPendiente = { atacanteUid:actorUid, defensorUid:acc.enemigoUid, titular:res.titular, detalles:res.detalles, detallesAtacante:res.detallesAtacante, detallesDefensor:res.detallesDefensor };
+        if (verificarVictoria(territorios, actorUid)) {
+          updates.estado = 'terminada'; updates.ganador = actorUid;
+          noticias.push({ turno:p.turno, headline:`🏆 ${yo.nombre} conquistó los 4 biomas — ¡VICTORIA!`, details:[] });
+        }
+      }
+    }
+  }
+
+  // Producción
+  const prod = yo.produccion || {};
+  const special = BIOME_SPECIAL[yo.biome];
+  const comerciales = alianzas.filter(a=>(a.a===actorUid||a.b===actorUid)&&a.tipo==='trade');
+  const nAl = comerciales.length;
+  const miShare = nAl===0?1:nAl===1?0.33:nAl===2?0.22:0.16;
+  const alShare = nAl===0?0:nAl===1?0.66:nAl===2?0.33:0.22;
+
+  const nuevosRec = {...(updates[`jugadores.${actorUid}.recursos`]||yo.recursos)};
+  Object.entries(prod).forEach(([k,v]) => {
+    nuevosRec[k] = Math.min(1000,(nuevosRec[k]||0)+(k===special?Math.floor(v*miShare):v));
+  });
+  // Bonus +50% en recursos no especiales por ser anfitrión de asilo
+  const asiloDB = updates.asilo || p.asilo;
+  if (asiloDB?.anfitrion === actorUid) {
+    Object.entries(prod).forEach(([k,v]) => {
+      if (k !== special) nuevosRec[k] = Math.min(1000,(nuevosRec[k]||0)+Math.floor(v*0.5));
+    });
+  }
+  updates[`jugadores.${actorUid}.recursos`] = nuevosRec;
+
+  comerciales.forEach(a => {
+    const alUid = a.a===actorUid?a.b:a.a;
+    const al = p.jugadores[alUid]; if (!al) return;
+    const bonus = Math.floor((prod[special]||0)*alShare);
+    const alRec = updates[`jugadores.${alUid}.recursos`] || {...al.recursos};
+    alRec[special] = Math.min(1000,(alRec[special]||0)+bonus);
+    updates[`jugadores.${alUid}.recursos`] = alRec;
+  });
+
+  updates[`jugadores.${actorUid}.si`] = calcularSI(actorUid,
+    {...p.jugadores,[actorUid]:{...yo,recursos:nuevosRec}}, territorios, alianzas);
+  updates[`jugadores.${actorUid}.ataqueUsado`] = ataqueHecho;
+  updates[`jugadores.${actorUid}.truequesUsados`] = 0;
+  updates[`salteos.${actorUid}`] = 0;
+
+  const baseOrden = ordenCambio ? ordenTurnos : p.ordenTurnos;
+  const baseIdx   = ordenCambio ? turnoActualIdx : p.turnoActualIdx;
+  const nextIdx = (baseIdx+1) % baseOrden.length;
+  if (ordenCambio) updates.ordenTurnos = ordenTurnos;
+  updates.turnoActualIdx = nextIdx;
+  updates.turno = nextIdx===0 ? p.turno+1 : p.turno;
+  updates.propuestas = propuestas;
+  updates.alianzas = alianzas;
+  updates.noticias = noticias;
+  updates.turnoInicio = serverTimestamp();
+  if (batallaPendiente) updates.ultimaBatalla = { ...batallaPendiente, vistoPor:[] };
+  // Limpiar propuesta tras ejecución aprobada
+  if (p.asilo?.propuesta && actorUid === p.asilo?.anfitrion && !updates.asilo) {
+    updates.asilo = { ...p.asilo, propuesta: null, estado: 'activo' };
+  }
+
+  await updateDoc(doc(db,'partidas',partidaId), updates);
+}
+
+window.siguienteTurno = async () => {
+  if (!partidaData) return;
+  const p = partidaData;
+  if (p.ordenTurnos[p.turnoActualIdx] !== currentUser.uid) { toast('No es tu turno'); return; }
+
+  // Anfitrión con asilado: guardar propuesta para aprobación antes de ejecutar
+  if (p.asilo?.anfitrion === currentUser.uid &&
+      (p.asilo.estado === 'activo' || p.asilo.estado === 'esperando_anfitrion')) {
+    await updateDoc(doc(db,'partidas',currentPartidaId), {
+      'asilo.propuesta': colaAcciones,
+      'asilo.estado': 'esperando_asilado'
+    });
+    colaAcciones = [];
+    closePanels();
+    toast('⏳ Propuesta enviada al refugiado para aprobación');
+    return;
+  }
+
+  await ejecutarCola(currentUser.uid, colaAcciones, p, currentPartidaId);
+  colaAcciones = [];
+  closePanels();
+  toast('✓ Turno confirmado');
+};
+
+// ── ASILO CO-DECISIÓN ────────────────────────────────
+function mostrarReviewAsilo(p) {
+  const cola = p.asilo?.propuesta || [];
+  const labels = cola.map(a => {
+    if (a.tipo === 'propuesta') return `📜 Proponer alianza a ${a.paraName}`;
+    if (a.tipo === 'trueque') return `📦 Trueque con ${a.paraName}`;
+    if (a.tipo === 'respuesta') return `${a.respuesta==='aceptar'?'✓':'✕'} Responder propuesta de ${a.deName}`;
+    if (a.tipo === 'ruptura') return `💔 Romper alianza con ${a.aliadoName}`;
+    if (a.tipo === 'ataque') return `⚔️ Atacar a ${a.enemigoName}`;
+    return a.tipo;
+  });
+  document.getElementById('asilo-review-cola').innerHTML = labels.length
+    ? labels.map(l => `<div style="padding:2px 0">• ${l}</div>`).join('')
+    : '<div style="color:#666;font-style:italic">Sin acciones — solo confirmar turno</div>';
+  document.getElementById('modal-asilo-review').classList.add('open');
+}
+
+window.aprobarPropuestaAsilo = async () => {
+  const p = partidaData;
+  if (!p?.asilo || p.asilo.estado !== 'esperando_asilado' || p.asilo.asilado !== currentUser.uid) return;
+  await ejecutarCola(p.asilo.anfitrion, p.asilo.propuesta || [], p, currentPartidaId);
+  document.getElementById('modal-asilo-review').classList.remove('open');
+  toast('✓ Turno del anfitrión ejecutado');
+};
+
+window.rechazarPropuestaAsilo = async () => {
+  const p = partidaData;
+  if (!p?.asilo || p.asilo.estado !== 'esperando_asilado' || p.asilo.asilado !== currentUser.uid) return;
+  await updateDoc(doc(db,'partidas',currentPartidaId), {
+    'asilo.propuesta': null,
+    'asilo.estado': 'esperando_anfitrion'
+  });
+  document.getElementById('modal-asilo-review').classList.remove('open');
+  toast('Propuesta rechazada. Tu anfitrión puede modificarla.');
+};
+
+window.romperAsilo = async () => {
+  const p = partidaData;
+  if (!p?.asilo || p.asilo.anfitrion !== currentUser.uid) return;
+  showConfirm('¿Romper el asilo? El refugiado quedará eliminado definitivamente.', async () => {
+    const asilado = p.asilo.asilado;
+    const asilNombre = p.jugadores[asilado]?.nombre || '?';
+    const yo = p.jugadores[currentUser.uid];
+    const noticias = [...(p.noticias||[]), {
+      turno: p.turno,
+      headline: `🏳️ ${yo.nombre} rompió el asilo — ${asilNombre} queda eliminado`,
+      details: []
+    }];
+    await updateDoc(doc(db,'partidas',currentPartidaId), { asilo: null, noticias });
+    toast('Asilo roto');
+  });
+};
+
+// ── BATALLA MODAL ────────────────────────────────────
+function mostrarBatallaModal(ub, miUid) {
+  const esMiAtaque = ub.atacanteUid === miUid;
+  const esMiDefensa = ub.defensorUid === miUid;
+  const titular = ub.titular || '';
+  let icon = '⚔️';
+  if (titular.includes('🏆')) icon = '🏆';
+  else if (titular.includes('repelió')) icon = esMiAtaque ? '💔' : esMiDefensa ? '🛡️' : '🛡️';
+  else if (titular.includes('🏰')) icon = esMiAtaque ? '⚔️🏰' : esMiDefensa ? '💔🏰' : '🏰';
+  else if (titular.includes('venció')) icon = esMiAtaque ? '⚔️' : esMiDefensa ? '💔' : '⚔️';
+  else if (titular.includes('Empate')) icon = '🤝⚔️';
+  let detalles;
+  if (esMiAtaque && ub.detallesAtacante) detalles = ub.detallesAtacante;
+  else if (esMiDefensa && ub.detallesDefensor) detalles = ub.detallesDefensor;
+  else detalles = ub.detalles || [];
+  document.getElementById('batalla-icon').textContent = icon;
+  document.getElementById('batalla-titular').textContent = titular;
+  document.getElementById('batalla-detalles').innerHTML = detalles
+    .map(d => `<div class="batalla-detalle">${d}</div>`).join('');
+  document.getElementById('batalla-modal').classList.add('open');
+}
+
+window.cerrarBatalla = async () => {
+  document.getElementById('batalla-modal').classList.remove('open');
+  if (!currentPartidaId || !partidaData?.ultimaBatalla) return;
+  const vistos = [...(partidaData.ultimaBatalla.vistoPor||[])];
+  if (!vistos.includes(currentUser.uid)) {
+    vistos.push(currentUser.uid);
+    await updateDoc(doc(db,'partidas',currentPartidaId), { 'ultimaBatalla.vistoPor': vistos });
+  }
+};
+
+// ── NOTIFICACIONES ────────────────────────────────────
+async function setupNotifications() {
+  if (!('Notification' in window) || Notification.permission !== 'default') return;
+  await Notification.requestPermission();
+}
+
+function notificarTurnoMio() {
+  if (Notification.permission !== 'granted' || document.hasFocus()) return;
+  try { new Notification('NACIONES — Tu turno', { body: 'Es tu momento de jugar ⚔️' }); } catch(e) {}
+}
+
+// ── TIMEOUT DE TURNO ─────────────────────────────────
+let countdownInterval = null;
+let timeoutTriggered = false;
+
+function startCountdown(remainingMs, partidaId, p) {
+  if (countdownInterval) return; // ya corriendo
+  const el = document.getElementById('turno-countdown');
+  if (!el) return;
+  el.style.display = 'inline';
+  let ms = remainingMs;
+  const render = () => {
+    const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+    el.textContent = ` ⏱ ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  };
+  render();
+  countdownInterval = setInterval(() => {
+    ms -= 1000;
+    if (ms <= 0) { stopCountdown(); triggerTimeoutTurno(p, partidaId); return; }
+    render();
+  }, 1000);
+}
+
+function stopCountdown() {
+  if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  const el = document.getElementById('turno-countdown');
+  if (el) el.style.display = 'none';
+}
+
+async function triggerTimeoutTurno(p, partidaId) {
+  if (timeoutTriggered) return;
+  timeoutTriggered = true;
+  try {
+    const ref = doc(db, 'partidas', partidaId);
+    await runTransaction(db, async (t) => {
+      const snap = await t.get(ref);
+      const data = snap.data();
+      if (!data) return;
+      const ti = data.turnoInicio?.toDate?.();
+      if (!ti || Date.now() - ti.getTime() < 9*3600*1000) return;
+
+      const currentPlayerUid = data.ordenTurnos[data.turnoActualIdx];
+      const salteos = data.salteos || {};
+      const nuevosSalteos = { ...salteos, [currentPlayerUid]: (salteos[currentPlayerUid] || 0) + 1 };
+      const upd = { salteos: nuevosSalteos, turnoInicio: serverTimestamp() };
+
+      if (nuevosSalteos[currentPlayerUid] >= 2) {
+        // Eliminar jugador por inactividad
+        const jugador = data.jugadores?.[currentPlayerUid];
+        const noticias = [...(data.noticias || [])];
+        noticias.push({ turno: data.turno, headline: `⏱️ ${jugador?.nombre || '?'} fue eliminado por inactividad`, details: [] });
+        const newOrden = data.ordenTurnos.filter(uid => uid !== currentPlayerUid);
+        const newIdx = data.turnoActualIdx % Math.max(newOrden.length, 1);
+        upd.ordenTurnos = newOrden;
+        upd.turnoActualIdx = newIdx;
+        upd.noticias = noticias;
+        Object.entries(data.territorios || {}).forEach(([tid, uid]) => {
+          if (uid === currentPlayerUid) upd[`territorios.${tid}`] = null;
+        });
+      } else {
+        const nextIdx = (data.turnoActualIdx + 1) % data.ordenTurnos.length;
+        upd.turnoActualIdx = nextIdx;
+        upd.turno = nextIdx === 0 ? data.turno + 1 : data.turno;
+      }
+      t.update(ref, upd);
+    });
+  } catch(e) { console.error('timeout error', e); }
+  timeoutTriggered = false;
+}
+
+// ── NOTICIAS ─────────────────────────────────────────
+function buildNews() {
+  const noticias = (partidaData?.noticias || []);
+  const el = document.getElementById('news-body');
+  if (!noticias.length) { el.innerHTML = '<div style="padding:12px;color:#444;font-size:13px">Sin noticias</div>'; return; }
+  el.innerHTML = [...noticias].reverse().map(n => `
+    <div class="news-card" onclick="this.classList.toggle('expanded')">
+      <div class="news-card-header">
+        <span class="news-turn-chip">Turno ${n.turno}</span>
+        <span class="news-headline">${n.headline}</span>
+        <span class="news-arrow">▾</span>
+      </div>
+      ${n.details?.length ? `<div class="news-details">${n.details.map(d=>`<div class="news-detail-item">${d}</div>`).join('')}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── ÍNDICE DE SUPREMACÍA ─────────────────────────────
+function buildSI() {
+  if (!partidaData) return;
+  const jugadores = Object.values(partidaData.jugadores).sort((a,b)=>b.si-a.si);
+  const maxSI = Math.max(...jugadores.map(j=>j.si), 1);
+  document.getElementById('si-body').innerHTML = jugadores.map((j,i) => `
+    <div class="si-row">
+      <span class="si-rank">${i+1}</span>
+      <div class="si-flag" style="background:${j.color}">${j.init}</div>
+      <div class="si-name">${j.nombre}<em>${j.nacion}</em></div>
+      <div class="si-bar-track"><div class="si-bar-fill" style="background:${j.color};width:${(j.si/maxSI*100)||0}%"></div></div>
+      <span class="si-val">${j.si}</span>
+    </div>`).join('');
+}
+
+// ── INICIAR PARTIDA (con territorios) ────────────────
+window.iniciarPartida = async () => {
+  const snap = await getDoc(doc(db, 'partidas', currentPartidaId));
+  const p = snap.data();
+  const uids = Object.keys(p.jugadores).sort(() => Math.random() - 0.5);
+  const updates = {};
+  uids.forEach((uid, i) => { updates[`jugadores.${uid}.turnOrder`] = i + 1; });
+  const territorios = asignarTerritorios(p.jugadores);
+  await updateDoc(doc(db, 'partidas', currentPartidaId), {
+    estado: 'jugando',
+    ordenTurnos: uids,
+    turnoActualIdx: 0,
+    territorios,
+    turnoInicio: serverTimestamp(),
+    ...updates,
+  });
+};
+
+// ── PANEL NACION ─────────────────────────────────────
+const BIOME_COLOR   = { 'Montaña':'#607d8b','Llanura':'#2e7d32','Selva':'#1b5e20','Desierto':'#e65100' };
+const BIOME_ICON    = { 'Montaña':'⛰️','Llanura':'🌾','Selva':'🌲','Desierto':'⚙️' };
+const BIOME_SPECIAL = { 'Montaña':'piedra', 'Llanura':'alimento', 'Selva':'madera', 'Desierto':'metal' };
+const RES_ICON = { madera:'🌲', alimento:'🌾', metal:'⚙️', piedra:'⛰️' };
+
+function verificarVictoria(territorios, uid) {
+  const biomas = new Set();
+  Object.entries(territorios||{}).forEach(([tid, u]) => {
+    if (u !== uid) return;
+    Object.entries(BIOME_TERRS).forEach(([b, ts]) => { if (ts.includes(tid)) biomas.add(b); });
+  });
+  return biomas.size >= 4;
+}
+
+function calcularSI(uid, jugadores, territorios, alianzas) {
+  const j = jugadores[uid]; if (!j) return 0;
+  const r = j.recursos || {};
+  const pop = Math.min(r.alimento||0, r.madera||0);
+  const soldiers = Math.floor(pop * Math.min((r.metal||0)/((r.metal||0)+300), 0.65));
+  const terrs = Object.values(territorios||{}).filter(u=>u===uid).length;
+  const als = (alianzas||[]).filter(a=>a.a===uid||a.b===uid).length;
+  return terrs*200 + soldiers + Math.floor(((r.madera||0)+(r.alimento||0)+(r.metal||0)+(r.piedra||0))*0.05) + als*50;
+}
+
+async function abrirNacion(uid) {
+  if (!partidaData) return;
+  const p = partidaData;
+  const j = p.jugadores[uid];
+  if (!j) return;
+  const esMio = uid === currentUser.uid;
+  const biomeColor = BIOME_COLOR[j.biome] || '#555';
+
+  document.getElementById('panel-nation-title').textContent = j.nacion || j.nombre;
+  document.getElementById('panel-nation').classList.add('open');
+  document.getElementById('nation-overlay').classList.add('open');
+
+  const usnap = await getDoc(doc(db, 'usuarios', uid));
+  const ud = usnap.data() || {};
+  const nombrePersonal = ud.nombrePersonalizado || j.nombre;
+  const heroEl = ud.escudo
+    ? `<img class="nation-shield" src="${ud.escudo}">`
+    : `<div class="big-flag" style="background:${j.color}">${j.init}</div>`;
+
+  const misAlianzas = p.alianzas.filter(a => (a.a===uid||a.b===uid));
+  const allyLines = misAlianzas.map(a => {
+    const otroUid = a.a===uid ? a.b : a.a;
+    const otro = p.jugadores[otroUid];
+    const icon = BIOME_ICON[otro?.biome] || '';
+    return a.tipo==='trade' ? `🤝${icon} ${otro?.nombre}` : `🤝⚔️ ${otro?.nombre}`;
+  });
+  p.guerras.filter(g => g.a===uid||g.b===uid).forEach(g => {
+    const otroUid = g.a===uid ? g.b : g.a;
+    allyLines.push(`⚔️ En guerra con ${p.jugadores[otroUid]?.nombre}`);
+  });
+  const allyHtml = allyLines.length
+    ? allyLines.map(l=>`<div style="font-size:11px;color:#aaa;padding:2px 0">${l}</div>`).join('')
+    : '<span style="font-size:11px;color:#555">Sin alianzas conocidas</span>';
+
+  let relClass = 'rel-neutral', relLabel = 'Neutral';
+  const esAliado = p.alianzas.some(a=>(a.a===uid&&a.b===currentUser.uid)||(a.b===uid&&a.a===currentUser.uid));
+  const esEnemigo = p.guerras.some(g=>(g.a===uid&&g.b===currentUser.uid)||(g.b===uid&&g.a===currentUser.uid));
+  if (esMio) { relClass='rel-ally'; relLabel='Tu nación'; }
+  else if (esAliado) { relClass='rel-ally'; relLabel='Aliado'; }
+  else if (esEnemigo) { relClass='rel-enemy'; relLabel='⚔️ Guerra'; }
+
+  const theirTerrs = Object.values(p.territorios||{}).filter(u=>u===uid).length;
+
+  document.getElementById('nation-body').innerHTML = `
+    <div class="nation-hero">
+      ${heroEl}
+      <div class="nation-meta">
+        <h3>${nombrePersonal}</h3>
+        <p>Orden de turno: ${j.turnOrder}°</p>
+        <span class="biome-tag" style="background:${biomeColor}22;color:${biomeColor};border:1px solid ${biomeColor}44">${j.biome}</span>
+      </div>
+      <span class="rel-tag ${relClass}">${relLabel}</span>
+    </div>
+    <div class="info-line"><span>Territorios</span><span>${theirTerrs}</span></div>
+    <div class="info-line" style="align-items:flex-start"><span style="padding-top:2px">Alianzas</span><div style="text-align:right">${allyHtml}</div></div>
+    <div class="info-line"><span>Estado de guerra</span><span>${esEnemigo?'⚔️ Con vos':'Sin conflicto'}</span></div>
+    <div class="info-line"><span>Índice de Supremacía</span><span style="color:#c8a84b;font-weight:bold">${j.si} pts</span></div>
+    ${esMio ? `<div style="padding:8px 16px 20px;text-align:right">
+      <button onclick="confirmarAbandono()" style="background:none;border:none;color:#444;font-size:11px;cursor:pointer;padding:4px 0">🏳️ abandonar</button>
+    </div>` : ''}
+  `;
+}
+
+window.closeNation = () => {
+  document.getElementById('panel-nation').classList.remove('open');
+  document.getElementById('nation-overlay').classList.remove('open');
+};
+
+// ── CONFIRM MODAL ────────────────────────────────────
+function showConfirm(icon, title, desc, onOk) {
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-desc').textContent = desc;
+  document.getElementById('confirm-ok').onclick = () => { hideConfirm(); onOk(); };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+window.hideConfirm = () => document.getElementById('confirm-modal').classList.remove('open');
+
+// ── VICTORIA ─────────────────────────────────────────
+async function registrarStats(p) {
+  const usnap = await getDoc(doc(db, 'usuarios', currentUser.uid));
+  const ud = usnap.data() || {};
+  if ((ud.partidasConStats || []).includes(currentPartidaId)) return;
+  const jugadores = Object.values(p.jugadores).sort((a,b) => b.si - a.si);
+  const pos = jugadores.findIndex(j => j.uid === currentUser.uid);
+  const upd = { partidasConStats: arrayUnion(currentPartidaId) };
+  if (pos === 0) upd.oro = (ud.oro || 0) + 1;
+  else if (pos === 1) upd.plata = (ud.plata || 0) + 1;
+  else if (pos === 2) upd.bronce = (ud.bronce || 0) + 1;
+  await updateDoc(doc(db, 'usuarios', currentUser.uid), upd);
+}
+
+function mostrarVictoria(p) {
+  const ganadorUid = p.ganador;
+  const ganador = p.jugadores[ganadorUid];
+  const esMio = ganadorUid === currentUser.uid;
+  document.getElementById('victoria-titulo').textContent = esMio ? '🏆 ¡VICTORIA!' : '🏁 FIN DE PARTIDA';
+  document.getElementById('victoria-sub').textContent =
+    `${ganador?.nombre || '?'} conquistó los 4 biomas en ${p.turno} turno${p.turno !== 1 ? 's' : ''}`;
+  const jugadores = Object.values(p.jugadores).sort((a,b) => b.si - a.si);
+  document.getElementById('victoria-ranking').innerHTML = jugadores.map((j, i) => `
+    <div class="fin-ranking-row">
+      <span style="font-size:11px;color:#555;width:18px">${i+1}</span>
+      <div style="width:22px;height:22px;border-radius:50%;background:${j.color};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:bold;color:#fff;flex-shrink:0">${j.init}</div>
+      <span style="flex:1;font-size:12px;color:${j.uid===ganadorUid?'#c8a84b':'#ccc'}">${j.nombre} ${j.uid===ganadorUid?'👑':''}</span>
+      <span style="font-size:11px;color:#555">${j.si} SI</span>
+    </div>`).join('');
+  document.getElementById('modal-victoria').classList.add('open');
+  registrarStats(p);
+}
+
+window.confirmarAbandono = () => {
+  closeNation();
+  showConfirm('🏳️', 'Abandonar partida', 'Tu nación desaparece del mapa. No podés volver.', abandonarPartida);
+};
+
+async function abandonarPartida() {
+  const p = partidaData;
+  if (!p) return;
+  const yo = p.jugadores[currentUser.uid];
+  const updates = {};
+
+  // Liberar territorios
+  Object.entries(p.territorios || {}).forEach(([tid, uid]) => {
+    if (uid === currentUser.uid) updates[`territorios.${tid}`] = null;
+  });
+
+  // Sacar de la rotación de turnos
+  const esMiTurno = p.ordenTurnos[p.turnoActualIdx] === currentUser.uid;
+  const miIdx = p.ordenTurnos.indexOf(currentUser.uid);
+  const newOrden = p.ordenTurnos.filter(uid => uid !== currentUser.uid);
+  let newIdx = p.turnoActualIdx;
+  if (esMiTurno) newIdx = p.turnoActualIdx % Math.max(newOrden.length, 1);
+  else if (miIdx < p.turnoActualIdx) newIdx = p.turnoActualIdx - 1;
+  newIdx = Math.min(newIdx, Math.max(newOrden.length - 1, 0));
+
+  updates.ordenTurnos = newOrden;
+  updates.turnoActualIdx = newIdx;
+  if (esMiTurno) updates.turnoInicio = serverTimestamp();
+  updates.noticias = [...(p.noticias || []), {
+    turno: p.turno,
+    headline: `🏳️ ${yo?.nombre || 'Un jugador'} abandonó la partida`,
+    details: []
+  }];
+
+  await updateDoc(doc(db, 'partidas', currentPartidaId), updates);
+  volverLobby();
+}
+
+window.volverLobby = () => {
+  document.getElementById('modal-victoria').classList.remove('open');
+  document.getElementById('modal-eliminado').classList.remove('open');
+  closePanels();
+  if (unsubPartida) { unsubPartida(); unsubPartida = null; }
+  currentPartidaId = null;
+  partidaData = null;
+  showLobby(currentUser);
+  loadMisPartidas(currentUser.uid);
+};
+
+// ── ÚLTIMA BATALLA ────────────────────────────────────
+window.verUltimaBatalla = () => {
+  const ub = partidaData?.ultimaBatalla;
+  if (!ub) {
+    mostrarBatallaModal({
+      atacanteUid: currentUser.uid,
+      defensorUid: 'demo',
+      titular: '⚔️🏰 Imperio del Norte conquistó territorio de Los Bárbaros',
+      detalles: ['Ataque: 840 vs Defensa: 390 (ratio 2.15x)'],
+      detallesAtacante: ['Ataque: 840 vs Defensa: 390 (ratio 2.15x)', 'Conquistaste un territorio de Los Bárbaros.', 'Perdés 10% metal y 10% de población.'],
+      detallesDefensor: ['Ataque: 840 vs Defensa: 390 (ratio 2.15x)', 'Imperio del Norte te conquistó un territorio.', 'El atacante pierde 10% metal y 10% de población.'],
+      vistoPor: [],
+    }, currentUser.uid);
+    return;
+  }
+  mostrarBatallaModal(ub, currentUser.uid);
+};
+
+// ── CONSEJOS ─────────────────────────────────────────
+window.abrirConsejos = () => {
+  closePanels();
+  document.getElementById('panel-consejos').classList.add('open');
+  document.getElementById('panel-overlay').classList.add('open');
+};
+
+// ── UTILS ──────────────────────────────────────────────
+window.toast = (msg) => {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+};
+
+</script>
+
+<style>
+@keyframes jugarGlow {
+  0%,100%{box-shadow:0 0 0 0 rgba(200,168,75,0.5)}
+  50%{box-shadow:0 0 14px 5px rgba(200,168,75,0.25)}
+}
+</style>
+</body>
+</html>

@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NACIONES</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  background:#06060f;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  font-family:'Georgia',serif;
+}
+
+/* ── PHONE SHELL ── */
+#app {
+  width:390px;
+  height:844px;
+  background:#0a0a1a;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 0 60px rgba(0,0,0,0.9), 0 0 0 1px #1a1a2e;
+}
+
+/* ── TOP BAR ── */
+#profilebar {
+  position:absolute;
+  top:0; left:0; right:0;
+  height:68px;
+  background:#06060f;
+  border-bottom:1px solid rgba(200,168,75,0.15);
+  z-index:301;
+  display:flex;
+  align-items:center;
+  padding:0 12px;
+  gap:10px;
+}
+#profile-shield {
+  width:32px; height:32px;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:bold; color:#fff;
+  flex-shrink:0;
+  border:1.5px solid rgba(255,255,255,0.2);
+}
+#profile-names {
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+}
+#profile-nation { font-size:13px; color:#e8e0d0; font-weight:bold; }
+#profile-player { font-size:10px; color:#666; }
+
+#topbar {
+  position:absolute;
+  top:68px; left:0; right:0;
+  height:58px;
+  background:#06060f;
+  border-bottom:1px solid rgba(200,168,75,0.25);
+  z-index:300;
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+  gap:7px;
+}
+
+#turn-badge {
+  background:rgba(200,168,75,0.12);
+  border:1px solid rgba(200,168,75,0.4);
+  color:#c8a84b;
+  font-size:10px;
+  padding:4px 9px;
+  border-radius:20px;
+  white-space:nowrap;
+  letter-spacing:0.5px;
+  flex-shrink:0;
+}
+
+#player-status {
+  flex:1;
+  text-align:center;
+  font-size:10px;
+  color:#999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  overflow:hidden;
+}
+
+.status-dot {
+  width:7px; height:7px;
+  border-radius:50%;
+  flex-shrink:0;
+  animation:dotPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.35;transform:scale(0.8)}
+}
+
+.top-icon-btn {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  color:#bbb;
+  width:34px; height:34px;
+  border-radius:9px;
+  font-size:15px;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  transition:background 0.15s;
+}
+.top-icon-btn:active { background:rgba(255,255,255,0.15); }
+
+#btn-jugar {
+  flex:1;
+  background:linear-gradient(135deg, #c8a84b 0%, #9e7c28 100%);
+  border:none;
+  color:#0a0a1a;
+  font-weight:bold;
+  font-size:11px;
+  letter-spacing:1px;
+  height:34px;
+  border-radius:9px;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  animation:jugarGlow 2.5s ease-in-out infinite;
+}
+#btn-jugar:active { filter:brightness(0.85); }
+
+@keyframes jugarGlow {
+  0%,100%{box-shadow:0 0 0 0 rgba(200,168,75,0.5)}
+  50%{box-shadow:0 0 14px 5px rgba(200,168,75,0.25)}
+}
+
+/* ── MAP AREA ── */
+#map-area {
+  position:absolute;
+  top:126px; left:0; right:0;
+  bottom:197px;
+  overflow:hidden;
+  background:#0a0e1a;
+  display:flex;
+  align-items:center;
+}
+
+#map-wrapper {
+  position:relative;
+  width:100%;
+  /* height set by JS after image loads */
+}
+
+#map-img {
+  width:100%;
+  height:auto;
+  display:block;
+  user-select:none;
+  -webkit-user-drag:none;
+}
+
+/* Water shimmer overlays */
+.water-layer {
+  position:absolute;
+  pointer-events:none;
+  z-index:3;
+}
+
+#wl {
+  top:0; left:0; bottom:0; width:12%;
+  background:linear-gradient(to right, rgba(15,55,130,0.55), rgba(25,70,160,0.15) 60%, transparent);
+  animation:waveL 5s ease-in-out infinite alternate;
+}
+#wr {
+  top:0; right:0; bottom:0; width:12%;
+  background:linear-gradient(to left, rgba(15,55,130,0.55), rgba(25,70,160,0.15) 60%, transparent);
+  animation:waveR 4.2s ease-in-out infinite alternate;
+}
+#wb {
+  bottom:0; left:0; right:0; height:18%;
+  background:linear-gradient(to top, rgba(12,45,115,0.60), rgba(20,60,150,0.15) 60%, transparent);
+  animation:waveB 6s ease-in-out infinite alternate;
+}
+
+/* Moving wave lines on water */
+#wl::after, #wr::after, #wb::after {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent, transparent 14px,
+    rgba(80,140,220,0.06) 14px, rgba(80,140,220,0.06) 15px
+  );
+  animation:waveLines 3s linear infinite;
+}
+
+@keyframes waveL {
+  0%{opacity:0.6; transform:scaleX(1)}
+  100%{opacity:1; transform:scaleX(1.08)}
+}
+@keyframes waveR {
+  0%{opacity:1; transform:scaleX(1.08)}
+  100%{opacity:0.5; transform:scaleX(1)}
+}
+@keyframes waveB {
+  0%{opacity:0.5}
+  100%{opacity:0.9}
+}
+@keyframes waveLines {
+  from{background-position:0 0}
+  to{background-position:0 29px}
+}
+
+/* Map fade at bottom to blend into bottombar */
+#map-fade {
+  position:absolute;
+  bottom:0; left:0; right:0; height:40px;
+  background:linear-gradient(to top, #0a0a1a, transparent);
+  pointer-events:none;
+  z-index:4;
+}
+
+/* ── TERRITORY MARKERS ── */
+.terr {
+  position:absolute;
+  transform:translate(-50%,-50%);
+  cursor:pointer;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  transition:transform 0.15s;
+  overflow:visible;
+}
+.terr:active { transform:translate(-50%,-50%) scale(1.4); }
+
+.terr-flag {
+  width:22px; height:28px;
+  border-radius:3px 3px 3px 0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:bold; color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.6);
+  border:1.5px solid rgba(255,255,255,0.3);
+  position:relative;
+  overflow:hidden;
+}
+
+.terr-flag::after { content:none; }
+
+.terr.mine .terr-flag {
+  border-color:rgba(255,255,255,0.7);
+  box-shadow:0 0 10px rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.terr-avatar {
+  position:absolute;
+  top:-26px;
+  left:50%;
+  transform:translateX(-50%);
+  width:20px; height:20px;
+  border-radius:50%;
+  background:rgba(20,20,40,0.88);
+  border:1.5px solid rgba(255,255,255,0.55);
+  display:flex; align-items:center; justify-content:center;
+  font-size:7px; font-weight:bold; color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.9);
+}
+
+.terr-dot {
+  width:5px; height:5px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.6);
+  box-shadow:0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* ── BOTTOM BAR ── */
+#bottombar {
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:197px;
+  background:linear-gradient(to top, rgba(4,4,12,0.99) 0%, rgba(6,6,15,0.95) 100%);
+  border-top:1px solid rgba(200,168,75,0.2);
+  z-index:100;
+  padding:8px 12px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+#resources-grid {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+
+.res-row {
+  display:flex;
+  align-items:center;
+  gap:2px;
+}
+
+.res-icon { font-size:12px; width:16px; text-align:center; flex-shrink:0; }
+
+.res-name {
+  font-size:8px;
+  color:#666;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  width:36px;
+  flex-shrink:0;
+}
+
+.res-derived {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+  flex-shrink:0;
+  white-space:nowrap;
+  width:90px;
+  margin-left:10px;
+}
+.res-d-left { display:flex; align-items:center; gap:3px; }
+.res-d-icon  { font-size:11px; }
+.res-d-label {
+  font-size:8px;
+  color:#666;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  width:30px;
+}
+.res-d-val {
+  font-size:10px;
+  color:#c8a84b;
+  font-family:monospace;
+  min-width:24px;
+  text-align:right;
+}
+.res-d-sep { font-size:9px; color:#444; margin:0 2px; }
+
+.bar-track {
+  flex:1;
+  min-width:0;
+  height:5px;
+  background:rgba(255,255,255,0.06);
+  border-radius:3px;
+  position:relative;
+  overflow:hidden;
+}
+
+.bar-bg {
+  position:absolute;
+  top:0; left:0; bottom:0; right:0;
+  background:linear-gradient(to right, #c0392b 0%, #e67e22 35%, #f1c40f 65%, #27ae60 100%);
+  border-radius:3px;
+}
+
+.bar-mask {
+  position:absolute;
+  top:0; right:0; bottom:0;
+  background:#0c0c1c;
+  border-radius:0 3px 3px 0;
+  transition:width 0.6s ease;
+}
+
+.bar-val {
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:3px;
+}
+
+.res-val {
+  font-size:10px;
+  color:#c8a84b;
+  width:28px;
+  text-align:right;
+  font-family:monospace;
+  flex-shrink:0;
+}
+
+#bottom-row {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+#pop-pill {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;
+  padding:5px 10px;
+  flex-shrink:0;
+  cursor:pointer;
+}
+.pop-split {
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.pop-group {
+  display:flex;
+  gap:3px;
+  align-items:center;
+  font-size:11px;
+  color:#ddd;
+  font-family:monospace;
+}
+.pop-group .pop-icon { font-size:11px; }
+#pop-total {
+  font-size:8px;
+  color:#555;
+  font-family:monospace;
+  letter-spacing:0.3px;
+}
+
+#btn-consejos {
+  background:rgba(200,168,75,0.08);
+  border:1px solid rgba(200,168,75,0.3);
+  color:#c8a84b;
+  width:38px; height:34px;
+  border-radius:9px;
+  font-size:16px;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+#btn-consejos:active { background:rgba(200,168,75,0.2); }
+
+/* ── MI NACIÓN PANEL — minimal ── */
+.mn-stat-card {
+  border-radius:11px;
+  padding:12px 14px;
+  text-align:center;
+}
+.mn-stat-label {
+  font-size:9px; color:#666;
+  text-transform:uppercase; letter-spacing:1.5px;
+  margin-bottom:5px;
+}
+.mn-stat-num {
+  font-size:30px; font-family:monospace; font-weight:bold;
+  line-height:1;
+}
+.mn-stat-cmp {
+  font-size:9px; margin-top:5px; letter-spacing:0.3px;
+}
+
+.mn-res-row {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.mn-res-icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
+.mn-res-role { font-size:11px; color:#888; flex:1; }
+.mn-res-val  { font-size:12px; color:#ddd; font-family:monospace; }
+.mn-res-pill {
+  font-size:9px; font-weight:bold;
+  padding:2px 8px; border-radius:10px;
+  flex-shrink:0;
+}
+.pill-ok   { background:rgba(39,174,96,0.15); color:#27ae60; }
+.pill-warn { background:rgba(230,126,34,0.15); color:#e67e22; }
+.pill-bad  { background:rgba(192,57,43,0.15); color:#e74c3c; }
+
+.mn-alert {
+  display:flex; align-items:center; gap:10px;
+  padding:7px 0;
+  font-size:11px; color:#bbb;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+  line-height:1.4;
+}
+.mn-alert:last-child { border-bottom:none; }
+.mn-dot {
+  width:7px; height:7px; border-radius:50%;
+  flex-shrink:0;
+}
+
+/* ── OVERLAY ── */
+#overlay {
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.65);
+  z-index:200;
+  display:none;
+  opacity:0;
+  transition:opacity 0.25s;
+}
+#overlay.on { display:block; opacity:1; }
+
+/* ── PANELS (bottom sheets) ── */
+.panel {
+  position:absolute;
+  left:0; right:0; bottom:0;
+  background:#0f0f22;
+  border-top:1px solid rgba(200,168,75,0.3);
+  border-radius:18px 18px 0 0;
+  z-index:201;
+  transform:translateY(100%);
+  transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height:78%;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.panel.open { transform:translateY(0); }
+#panel-jugar { max-height:92%; }
+
+/* top panel (slides from top) */
+.panel-top {
+  top:126px; bottom:auto;
+  border-top:none;
+  border-bottom:1px solid rgba(200,168,75,0.3);
+  border-radius:0 0 18px 18px;
+  transform:translateY(-100%);
+  max-height:70%;
+}
+.panel-top.open { transform:translateY(0); }
+
+#panel-news { max-height:52%; }
+#news-body {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 22%, rgba(0,0,0,0.75) 45%, black 68%);
+  mask-image:         linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 22%, rgba(0,0,0,0.75) 45%, black 68%);
+}
+
+.panel-handle {
+  width:38px; height:4px;
+  background:rgba(255,255,255,0.15);
+  border-radius:2px;
+  margin:10px auto 0;
+  flex-shrink:0;
+}
+.panel-handle-top {
+  width:38px; height:4px;
+  background:rgba(255,255,255,0.15);
+  border-radius:2px;
+  margin:0 auto 10px;
+  flex-shrink:0;
+}
+
+.panel-header {
+  padding:12px 16px 10px;
+  font-size:13px;
+  color:#c8a84b;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  display:flex; align-items:center; gap:8px;
+  flex-shrink:0;
+}
+
+.panel-header .close-btn {
+  margin-left:auto;
+  color:#555;
+  font-size:18px;
+  cursor:pointer;
+  width:28px; height:28px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,0.05);
+  border:none;
+  line-height:1;
+}
+.panel-header .close-btn:active { background:rgba(255,255,255,0.15); }
+
+.panel-body {
+  padding:14px 16px 20px;
+  overflow-y:auto;
+  flex:1;
+}
+
+/* ── NATION INFO PANEL ── */
+.nation-hero {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.big-flag {
+  width:44px; height:54px;
+  border-radius:4px 4px 4px 0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:bold; color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,0.5);
+  border:2px solid rgba(255,255,255,0.25);
+  flex-shrink:0;
+  position:relative;
+  overflow:hidden;
+}
+.big-flag::after {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0; height:35%;
+  background:rgba(255,255,255,0.18);
+}
+
+.nation-meta h3 { font-size:17px; color:#e8e0d0; margin-bottom:3px; }
+.nation-meta p  { font-size:10px; color:#777; }
+
+.biome-tag {
+  display:inline-block;
+  padding:2px 9px; border-radius:12px;
+  font-size:9px; text-transform:uppercase; letter-spacing:1px;
+  margin-top:5px;
+}
+
+.rel-tag {
+  margin-left:auto;
+  padding:4px 10px; border-radius:12px;
+  font-size:10px; font-weight:bold;
+  flex-shrink:0;
+}
+.rel-neutral { background:rgba(255,255,255,0.06); color:#888; }
+.rel-ally    { background:rgba(39,174,96,0.18); color:#27ae60; border:1px solid rgba(39,174,96,0.3); }
+.rel-enemy   { background:rgba(192,57,43,0.18); color:#e74c3c; border:1px solid rgba(192,57,43,0.3); }
+.rel-trade   { background:rgba(41,128,185,0.18); color:#5dade2; border:1px solid rgba(41,128,185,0.3); }
+
+.info-line {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:12px;
+}
+.info-line span:first-child { color:#666; }
+.info-line span:last-child  { color:#ddd; }
+
+.action-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:14px;
+}
+
+.abtn {
+  padding:11px 8px;
+  border-radius:9px;
+  font-size:11px;
+  cursor:pointer;
+  text-align:center;
+  border:none;
+  font-family:'Georgia',serif;
+  transition:filter 0.15s;
+}
+.abtn:active { filter:brightness(0.8); }
+.abtn-gold  { background:linear-gradient(135deg,#c8a84b,#9e7c28); color:#0a0a1a; font-weight:bold; }
+.abtn-ghost { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#ccc; }
+.abtn-red   { background:rgba(192,57,43,0.15); border:1px solid rgba(192,57,43,0.3); color:#e74c3c; }
+.abtn-green { background:rgba(39,174,96,0.15); border:1px solid rgba(39,174,96,0.3); color:#27ae60; }
+.abtn-full  { grid-column:span 2; }
+
+/* ── JUGAR PANEL ── */
+.section-label {
+  font-size:9px;
+  color:#c8a84b;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  margin-bottom:8px;
+  margin-top:14px;
+}
+.section-label:first-child { margin-top:0; }
+
+.slider-row {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:7px;
+}
+.sl-icon { font-size:13px; width:18px; text-align:center; }
+.sl-label { font-size:10px; color:#aaa; width:75px; }
+.sl-input {
+  flex:1;
+  -webkit-appearance:none;
+  height:4px;
+  background:rgba(255,255,255,0.1);
+  border-radius:2px;
+  outline:none;
+}
+.sl-input::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:16px; height:16px;
+  border-radius:50%;
+  background:#c8a84b;
+  cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,0.4);
+}
+.sl-pct {
+  font-size:11px; color:#c8a84b;
+  width:30px; text-align:right;
+  font-family:monospace;
+}
+
+#total-line {
+  text-align:right;
+  font-size:10px; color:#555;
+  margin-bottom:4px;
+}
+#total-line.ok   { color:#27ae60; }
+#total-line.over { color:#e74c3c; }
+
+.divider {
+  height:1px;
+  background:rgba(255,255,255,0.05);
+  margin:12px 0;
+}
+
+.agreement-list {
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:8px;
+}
+
+.agreement-row {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 10px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:11px;
+}
+.agreement-row:last-child { border-bottom:none; }
+.ag-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.ag-text { flex:1; color:#ccc; }
+.ag-active-dot {
+  color:#27ae60; font-size:13px; flex-shrink:0;
+}
+
+.proposal-row {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 10px;
+  background:rgba(200,168,75,0.06);
+  border:1px solid rgba(200,168,75,0.15);
+  border-radius:8px;
+  margin-bottom:6px;
+}
+.proposal-info { flex:1; display:flex; flex-direction:column; gap:2px; }
+.proposal-who  { font-size:11px; color:#ddd; font-weight:bold; }
+.proposal-what { font-size:10px; color:#888; }
+.proposal-btns { display:flex; gap:5px; flex-shrink:0; }
+.proposal-btns .abtn { padding:5px 10px; font-size:12px; }
+
+.war-banner {
+  background:rgba(192,57,43,0.1);
+  border:1px solid rgba(192,57,43,0.25);
+  border-radius:8px;
+  padding:10px;
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:8px;
+  font-size:11px; color:#e74c3c;
+}
+
+.confirm-btn {
+  width:100%;
+  padding:14px;
+  background:linear-gradient(135deg,#c8a84b 0%,#8a6018 100%);
+  border:none; border-radius:11px;
+  color:#0a0a1a; font-size:14px; font-weight:bold;
+  font-family:'Georgia',serif; letter-spacing:1px;
+  cursor:pointer; margin-top:18px;
+  text-transform:uppercase;
+  transition:filter 0.15s;
+}
+.confirm-btn:active { filter:brightness(0.85); }
+
+/* ── TRUEQUE CONFIG ── */
+.trueque-player-header {
+  display:flex; align-items:center; gap:10px;
+  padding-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  margin-bottom:16px;
+}
+.trueque-section-title {
+  font-size:10px; color:#666; text-transform:uppercase;
+  letter-spacing:1px; margin-bottom:8px; margin-top:14px;
+}
+.pct-group {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:6px;
+  margin-bottom:4px;
+}
+.pct-btn {
+  padding:8px 4px; border-radius:8px; font-size:12px; font-weight:bold;
+  background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.1);
+  color:#aaa; cursor:pointer; text-align:center; transition:all 0.15s;
+}
+.pct-btn.selected {
+  background:rgba(200,168,75,0.2); border-color:#c8a84b; color:#c8a84b;
+}
+.trueque-resumen {
+  margin-top:14px; padding:10px 12px;
+  background:rgba(255,255,255,0.04); border-radius:8px;
+  font-size:11px; color:#999; line-height:1.6;
+}
+
+/* ── PLAYER PICKER ── */
+.picker-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.picker-row:last-child { border-bottom:none; }
+.picker-avatar {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:bold; color:#fff;
+  flex-shrink:0;
+}
+.picker-info { flex:1; display:flex; flex-direction:column; gap:3px; }
+.picker-name  { font-size:13px; color:#ddd; }
+.picker-meta  { font-size:10px; color:#666; }
+.picker-status-tag {
+  font-size:9px; font-weight:bold;
+  padding:1px 6px; border-radius:8px;
+  display:inline-block; margin-left:4px;
+}
+
+/* ── SUPERIORITY INDEX PANEL ── */
+.si-row {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.si-rank { font-size:11px; color:#555; width:18px; text-align:center; flex-shrink:0; }
+.si-flag {
+  width:20px; height:26px;
+  border-radius:2px 2px 2px 0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:8px; font-weight:bold; color:#fff;
+  flex-shrink:0;
+}
+.si-name { font-size:11px; color:#ccc; width:62px; flex-shrink:0; }
+.si-name em { font-size:8px; color:#666; font-style:normal; }
+.si-bar-track {
+  flex:1; height:7px;
+  background:rgba(255,255,255,0.05);
+  border-radius:4px; overflow:hidden;
+}
+.si-bar-fill {
+  height:100%; border-radius:4px;
+  transition:width 0.8s ease;
+}
+.si-val {
+  font-size:10px; color:#c8a84b;
+  width:28px; text-align:right;
+  font-family:monospace; flex-shrink:0;
+}
+
+/* ── NEWS PANEL ── */
+.news-card {
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;
+  padding:13px 14px;
+  margin-bottom:10px;
+  cursor:pointer;
+}
+.news-card-header {
+  display:flex; align-items:flex-start; gap:10px;
+}
+.news-turn-chip {
+  background:rgba(200,168,75,0.12);
+  color:#c8a84b;
+  font-size:9px;
+  padding:3px 8px; border-radius:10px;
+  white-space:nowrap; flex-shrink:0;
+  margin-top:2px;
+}
+.news-headline {
+  flex:1; font-size:15px; color:#e8e0d0;
+  line-height:1.45; font-weight:bold;
+}
+.news-arrow {
+  color:#666; font-size:13px; flex-shrink:0;
+  margin-top:3px;
+  transition:transform 0.2s;
+}
+.news-card.expanded .news-arrow { transform:rotate(180deg); }
+.news-details {
+  display:none;
+  padding-top:10px; margin-top:10px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+.news-card.expanded .news-details { display:block; }
+.news-detail-item {
+  font-size:12px; color:#999;
+  padding:4px 0 4px 12px;
+  border-left:2px solid rgba(200,168,75,0.3);
+  margin-bottom:5px;
+  line-height:1.45;
+}
+
+/* ── CONSEJOS PANEL ── */
+.consejo-card {
+  border-radius:10px;
+  padding:12px 14px;
+  margin-bottom:10px;
+}
+.consejo-warn {
+  background:rgba(192,57,43,0.10);
+  border:1px solid rgba(192,57,43,0.25);
+}
+.consejo-ok {
+  background:rgba(39,174,96,0.08);
+  border:1px solid rgba(39,174,96,0.2);
+}
+.consejo-info {
+  background:rgba(200,168,75,0.06);
+  border:1px solid rgba(200,168,75,0.18);
+}
+.consejo-titulo {
+  font-size:13px; font-weight:bold; color:#e8e0d0;
+  margin-bottom:6px;
+}
+.consejo-texto {
+  font-size:12px; color:#999; line-height:1.5;
+}
+
+/* ── CONFIRM MODAL ── */
+#confirm-modal {
+  position:absolute;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.72);
+  z-index:500;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+#confirm-modal.on { display:flex; }
+.modal-card {
+  background:#13132a;
+  border:1px solid rgba(200,168,75,0.3);
+  border-radius:14px;
+  padding:22px 20px 18px;
+  width:100%;
+  text-align:center;
+}
+.modal-icon { font-size:30px; margin-bottom:10px; }
+.modal-title {
+  font-size:15px; font-weight:bold; color:#e8e0d0;
+  margin-bottom:8px;
+}
+.modal-desc {
+  font-size:12px; color:#888; line-height:1.55;
+  margin-bottom:18px;
+}
+.modal-btns { display:flex; gap:10px; }
+.modal-btns .abtn { flex:1; padding:12px 8px; font-size:12px; }
+
+/* ── TOAST ── */
+#toast {
+  position:absolute;
+  top:68px; left:14px; right:14px;
+  background:rgba(200,168,75,0.95);
+  color:#0a0a1a;
+  padding:9px 13px;
+  border-radius:9px;
+  font-size:12px; font-weight:bold;
+  z-index:400;
+  transform:translateY(-30px);
+  opacity:0;
+  transition:transform 0.25s ease, opacity 0.25s ease;
+  pointer-events:none;
+}
+#toast.show { transform:translateY(0); opacity:1; }
+
+/* ── RIPPLE ── */
+@keyframes rippleOut {
+  from { width:10px; height:10px; opacity:1; margin:-5px; }
+  to   { width:56px; height:56px; opacity:0; margin:-28px; }
+}
+.ripple {
+  position:absolute;
+  border:2px solid rgba(200,168,75,0.7);
+  border-radius:50%;
+  pointer-events:none;
+  animation:rippleOut 0.45s ease-out forwards;
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="profilebar">
+    <div id="profile-shield" style="background:#c0392b">Fe</div>
+    <div id="profile-names">
+      <span id="profile-nation">Imperio Rojo</span>
+      <span id="profile-player">Federico</span>
+    </div>
+  </div>
+
+  <div id="topbar">
+    <div id="turn-badge">Turno 5</div>
+    <div id="player-status">
+      <span class="status-dot" style="background:#c0392b"></span>
+      <span id="status-text">¡Es tu turno!</span>
+    </div>
+    <button class="top-icon-btn" onclick="togglePanel('news')" title="Noticias">📜</button>
+    <button class="top-icon-btn" onclick="togglePanel('si')" title="Índice">📊</button>
+  </div>
+
+  <!-- MAP -->
+  <div id="map-area">
+    <div id="map-wrapper">
+      <img id="map-img" src="mapa.jpg" alt="Mapa de Naciones" draggable="false">
+
+      <!-- Water overlays -->
+      <div class="water-layer" id="wl"></div>
+      <div class="water-layer" id="wr"></div>
+      <div class="water-layer" id="wb"></div>
+      <div id="map-fade"></div>
+
+      <!-- ── 12 TERRITORIES ── -->
+      <!-- MONTAÑA -->
+      <div class="terr mine" id="t-M1" style="left:calc(44% - 4px);top:calc(9% - 2px)"  onclick="clickTerr(event,'M1')"><div class="terr-avatar">Fe</div><div class="terr-flag" style="background:#e8e8e8;border:1px solid #bbb"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-M2" style="left:calc(29% + 1px);top:calc(18% - 7px)" onclick="clickTerr(event,'M2')"><div class="terr-avatar">So</div><div class="terr-flag" style="background:#e8e8e8;border:1px solid #bbb"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-M3" style="left:calc(23% + 1px);top:calc(32% - 7px)" onclick="clickTerr(event,'M3')"><div class="terr-avatar">Va</div><div class="terr-flag" style="background:#e8e8e8;border:1px solid #bbb"></div><div class="terr-dot"></div></div>
+      <!-- LLANURA -->
+      <div class="terr"      id="t-L1" style="left:calc(55% + 1px);top:calc(30% - 9px)" onclick="clickTerr(event,'L1')"><div class="terr-avatar">An</div><div class="terr-flag" style="background:#8bc34a"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-L2" style="left:calc(53% - 2px);top:calc(46% - 12px)" onclick="clickTerr(event,'L2')"><div class="terr-avatar">An</div><div class="terr-flag" style="background:#8bc34a"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-L3" style="left:calc(81% - 1px);top:calc(44% - 12px)" onclick="clickTerr(event,'L3')"><div class="terr-avatar">Ju</div><div class="terr-flag" style="background:#8bc34a"></div><div class="terr-dot"></div></div>
+      <!-- SELVA -->
+      <div class="terr"      id="t-S1" style="left:calc(76% - 3px);top:calc(17% - 8px)" onclick="clickTerr(event,'S1')"><div class="terr-avatar">Di</div><div class="terr-flag" style="background:#2e7d32"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-S2" style="left:calc(62% - 1px);top:calc(81% - 24px)" onclick="clickTerr(event,'S2')"><div class="terr-avatar">Ma</div><div class="terr-flag" style="background:#2e7d32"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-S3" style="left:81%;top:calc(69% - 12px)" onclick="clickTerr(event,'S3')"><div class="terr-avatar">Ma</div><div class="terr-flag" style="background:#2e7d32"></div><div class="terr-dot"></div></div>
+      <!-- DESIERTO -->
+      <div class="terr"      id="t-D1" style="left:calc(22% + 1px);top:calc(54% - 10px)" onclick="clickTerr(event,'D1')"><div class="terr-avatar">Pa</div><div class="terr-flag" style="background:#f57c00"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-D2" style="left:calc(33% - 2px);top:calc(64% - 14px)" onclick="clickTerr(event,'D2')"><div class="terr-avatar">Lu</div><div class="terr-flag" style="background:#f57c00"></div><div class="terr-dot"></div></div>
+      <div class="terr"      id="t-D3" style="left:calc(22% + 1px);top:calc(81% - 23px)" onclick="clickTerr(event,'D3')"><div class="terr-avatar">Pa</div><div class="terr-flag" style="background:#f57c00"></div><div class="terr-dot"></div></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottombar">
+    <div id="resources-grid">
+      <div class="res-row">
+        <span class="res-icon">🌲</span>
+        <span class="res-name">Madera</span>
+        <div class="bar-val"><div class="bar-track"><div class="bar-bg"></div><div class="bar-mask" id="m-madera"></div></div><span class="res-val" id="v-madera">460</span></div>
+        <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">🏠</span><span class="res-d-label">Techo</span></span><span class="res-d-val" id="d-madera">460</span></div>
+      </div>
+      <div class="res-row">
+        <span class="res-icon">🌾</span>
+        <span class="res-name">Alim.</span>
+        <div class="bar-val"><div class="bar-track"><div class="bar-bg"></div><div class="bar-mask" id="m-alimento"></div></div><span class="res-val" id="v-alimento">780</span></div>
+        <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">👥</span><span class="res-d-label">Hab.</span></span><span class="res-d-val" id="d-alimento">460</span></div>
+      </div>
+      <div class="res-row">
+        <span class="res-icon">⚙️</span>
+        <span class="res-name">Metal</span>
+        <div class="bar-val"><div class="bar-track"><div class="bar-bg"></div><div class="bar-mask" id="m-metal"></div></div><span class="res-val" id="v-metal">210</span></div>
+        <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">⚔️</span><span class="res-d-label">Ejérc.</span></span><span class="res-d-val" id="d-metal">189</span></div>
+      </div>
+      <div class="res-row">
+        <span class="res-icon">⛰️</span>
+        <span class="res-name">Piedra</span>
+        <div class="bar-val"><div class="bar-track"><div class="bar-bg"></div><div class="bar-mask" id="m-piedra"></div></div><span class="res-val" id="v-piedra">320</span></div>
+        <div class="res-derived"><span class="res-d-left"><span class="res-d-icon">🛡️</span><span class="res-d-label">Def.</span></span><span class="res-d-val" id="d-piedra">×1.4</span></div>
+      </div>
+    </div>
+    <div id="bottom-row">
+      <button id="btn-consejos" onclick="togglePanel('consejos')">💡</button>
+      <button id="btn-jugar" onclick="openPanel('jugar')">⚔ JUGAR</button>
+    </div>
+  </div>
+
+  <!-- ── CONSEJOS PANEL ── -->
+  <div class="panel" id="panel-consejos">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      💡 Consejos
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body" id="consejos-body">
+      <div class="consejo-card consejo-warn">
+        <div class="consejo-titulo">⚠️ Defensa en riesgo 🛡️</div>
+        <div class="consejo-texto">🤝⚔️ Ana y Lucas cerraron alianza bélica. Su poder combinado supera tu 🛡️ defensa (×1.4). Aliáte con Carlos o Sofía antes de que ataquen, o acumulá ⛰️ piedra rápido.</div>
+      </div>
+      <div class="consejo-card consejo-ok">
+        <div class="consejo-titulo">✅ Alianza con Diego rinde 🤝🌲</div>
+        <div class="consejo-texto">Recibís 🌲 +60 Madera por turno de Diego (Selva). Eso te sube el techo de 👥 población. Si sumás otro 🤝 aliado de Selva, tu crecimiento se dispara aún más.</div>
+      </div>
+      <div class="consejo-card consejo-info">
+        <div class="consejo-titulo">💡 Madera es tu cuello de botella 🌲</div>
+        <div class="consejo-texto">Tu 👥 población está limitada por 🌲 Madera (460), no por 🌾 Alimento (780). Se desperdician 320 hab. por turno. Priorizá 🤝 alianzas comerciales con Selva.</div>
+      </div>
+      <div class="consejo-card consejo-info">
+        <div class="consejo-titulo">💡 Metal bajo para atacar ⚙️</div>
+        <div class="consejo-texto">Con ⚙️ 210 de metal tus ⚔️ soldados son 189 — suficiente para 🛡️ defender pero no para conquistar a Ana. Sumá 🤝⚔️ apoyo de Martín o acumulá más ⚙️ metal primero.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY -->
+  <div id="overlay" onclick="closePanels()"></div>
+
+  <!-- ── PLAYER PICKER PANEL ── -->
+  <div class="panel" id="panel-picker">
+    <div class="panel-handle"></div>
+    <div class="panel-header" id="picker-header">
+      Elegí una nación
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body" id="picker-body"></div>
+  </div>
+
+  <!-- ── NATION INFO PANEL ── -->
+  <div class="panel" id="panel-nation">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      🏰 <span id="panel-nation-title">Nación</span>
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body" id="nation-body"></div>
+  </div>
+
+  <!-- ── JUGAR PANEL ── -->
+  <div class="panel" id="panel-jugar">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      ⚔ Tu turno — Federico
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body">
+
+      <!-- Propuestas recibidas -->
+      <div class="section-label">Propuestas recibidas</div>
+      <div class="proposal-row">
+        <div class="proposal-info">
+          <span class="proposal-who">Lucas (Desierto)</span>
+          <span class="proposal-what">Alianza comercial — te da Metal / vos das Alimento</span>
+        </div>
+        <div class="proposal-btns" data-decided="false">
+          <button class="abtn abtn-green" id="prop-accept-lucas" onclick="handleProposal(this,'accept','Lucas')">✓</button>
+          <button class="abtn abtn-ghost" id="prop-decline-lucas" onclick="handleProposal(this,'decline','Lucas')">✕</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Alianzas comerciales -->
+      <div class="section-label">Alianzas comerciales</div>
+      <div class="agreement-list" id="comercial-list">
+        <div class="agreement-row">
+          <div class="ag-dot" style="background:#8bc34a"></div>
+          <span class="ag-text">Diego (Selva) — das Alimento · recibís Madera</span>
+          <span class="ag-active-dot">●</span>
+        </div>
+      </div>
+      <button class="abtn abtn-ghost" style="width:100%;margin-bottom:4px" onclick="openPicker('comercial')">+ Proponer alianza comercial</button>
+
+      <div class="divider"></div>
+
+      <!-- Alianzas militares -->
+      <div class="section-label">Alianzas militares</div>
+      <div class="agreement-list" id="militar-list">
+        <div class="agreement-row">
+          <div class="ag-dot" style="background:#c0392b"></div>
+          <span class="ag-text">Martín (Selva) — apoyo mutuo en combate</span>
+          <span class="ag-active-dot">●</span>
+        </div>
+      </div>
+      <button class="abtn abtn-ghost" style="width:100%;margin-bottom:4px" onclick="openPicker('militar')">+ Proponer alianza militar</button>
+
+      <div id="war-section" style="display:none">
+        <div class="divider"></div>
+        <div class="section-label">Estado bélico</div>
+        <div id="war-banner-text" class="war-banner"></div>
+        <button class="abtn abtn-ghost" style="width:100%;margin-bottom:4px" onclick="openPanel('jugar');setTimeout(()=>toast('🏳 Tropas retiradas'),200)">🏳 Retirar tropas</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Trueques -->
+      <div class="section-label">Trueques <span style="font-size:9px;color:#555;font-weight:normal">(máx. 2 por turno)</span></div>
+      <div class="agreement-list" id="trueque-list" style="display:none"></div>
+      <button class="abtn abtn-ghost" style="width:100%;margin-bottom:4px" onclick="openPicker('trueque')">+ Proponer trueque</button>
+
+      <button class="confirm-btn" onclick="confirmTurn()">✓ Siguiente turno</button>
+
+    </div>
+  </div>
+
+  <!-- ── MI NACIÓN PANEL ── -->
+  <div class="panel" id="panel-mi-nacion">
+    <div class="panel-handle"></div>
+    <div class="panel-header">
+      📈 Mi situación actual
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-body" id="mi-nacion-body"></div>
+  </div>
+
+  <!-- ── SUPERIORITY INDEX PANEL ── -->
+  <div class="panel panel-top" id="panel-si">
+    <div class="panel-header">
+      📊 Índice de Supremacía
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-handle-top"></div>
+    <div class="panel-body" id="si-body"></div>
+  </div>
+
+  <!-- ── NEWS PANEL ── -->
+  <div class="panel panel-top" id="panel-news">
+    <div class="panel-header">
+      📜 Noticias
+      <button class="close-btn" onclick="closePanels()">✕</button>
+    </div>
+    <div class="panel-handle-top"></div>
+    <div class="panel-body" id="news-body"></div>
+  </div>
+
+  <!-- CONFIRM MODAL -->
+  <div id="confirm-modal">
+    <div class="modal-card">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">Tenés propuestas sin decidir</div>
+      <div class="modal-desc">No aceptaste ni rechazaste todas las propuestas recibidas. Si avanzás, se pierden hasta el próximo turno.</div>
+      <div class="modal-btns">
+        <button class="abtn abtn-ghost" onclick="closeConfirmModal()">Volver a revisar</button>
+        <button class="abtn abtn-gold" onclick="closeConfirmModal(); doConfirmTurn()">Igual, siguiente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+</div><!-- #app -->
+
+<script>
+// ── GAME STATE ──────────────────────────────────────
+const ME = 'federico';
+
+// Producción base por bioma (balanceado — E4)
+const BIOME_PROD = {
+  'Montaña':  { alimento:20, madera:20, metal:20, piedra:50 },
+  'Llanura':  { alimento:60, madera:20, metal:20, piedra:20 },
+  'Selva':    { alimento:20, madera:60, metal:20, piedra:20 },
+  'Desierto': { alimento:25, madera:25, metal:60, piedra:20 },
+};
+// Bonus de terreno por bioma
+const BIOME_TERRAIN = { 'Montaña':1.05, 'Llanura':1.05, 'Selva':1.0, 'Desierto':1.0 };
+
+const PLAYERS = [
+  { id:'federico',  name:'Federico',  nation:'Imperio Rojo',      init:'Fe', color:'#c0392b', biome:'Llanura',  si:87, isMe:true,  turnOrder:4 },
+  { id:'carlos',    name:'Carlos',    nation:'Fortaleza Azul',    init:'Ca', color:'#2980b9', biome:'Montaña',  si:72,            turnOrder:7 },
+  { id:'diego',     name:'Diego',     nation:'Bosque Eterno',     init:'Di', color:'#27ae60', biome:'Selva',    si:65, tradeAlly:true, turnOrder:2 },
+  { id:'ana',       name:'Ana',       nation:'Corona Naranja',    init:'An', color:'#e67e22', biome:'Llanura',  si:91, enemy:true, turnOrder:1 },
+  { id:'lucas',     name:'Lucas',     nation:'Desierto Violeta',  init:'Lu', color:'#7b1fa2', biome:'Desierto', si:78,            turnOrder:9 },
+  { id:'sofia',     name:'Sofía',     nation:'Pico Dorado',       init:'So', color:'#d35400', biome:'Montaña',  si:55,            turnOrder:6 },
+  { id:'martin',    name:'Martín',    nation:'Selva Esmeralda',   init:'Ma', color:'#16a085', biome:'Selva',    si:48, milAlly:true, turnOrder:10 },
+  { id:'julia',     name:'Julia',     nation:'Valle Rosa',        init:'Ju', color:'#e91e63', biome:'Llanura',  si:63,            turnOrder:3 },
+  { id:'pablo',     name:'Pablo',     nation:'Llanos Grises',     init:'Pa', color:'#546e7a', biome:'Desierto', si:44,            turnOrder:8 },
+  { id:'valentina', name:'Valentina', nation:'Cumbre Púrpura',    init:'Va', color:'#9c27b0', biome:'Montaña',  si:39,            turnOrder:5 },
+];
+
+const ALLIANCES = [
+  { a:'federico', b:'diego',    type:'trade' },
+  { a:'federico', b:'martin',   type:'mil'   },
+  { a:'ana',      b:'lucas',    type:'mil'   },
+  { a:'carlos',   b:'sofia',    type:'trade' },
+  { a:'julia',    b:'pablo',    type:'trade' },
+];
+const WARS = [
+  { a:'federico', b:'ana' },
+  { a:'carlos',   b:'valentina' },
+];
+
+const TERRITORIES = {
+  M1:{ player:'federico',  biome:'Montaña'  },
+  M2:{ player:'sofia',     biome:'Montaña'  },
+  M3:{ player:'valentina', biome:'Montaña'  },
+  L1:{ player:'ana',       biome:'Llanura'  },
+  L2:{ player:'ana',       biome:'Llanura'  },
+  L3:{ player:'julia',     biome:'Llanura'  },
+  S1:{ player:'diego',     biome:'Selva'    },
+  S2:{ player:'martin',    biome:'Selva'    },
+  S3:{ player:'martin',    biome:'Selva'    },
+  D1:{ player:'pablo',     biome:'Desierto' },
+  D2:{ player:'lucas',     biome:'Desierto' },
+  D3:{ player:'pablo',     biome:'Desierto' },
+};
+
+const RESOURCES = { piedra:320, alimento:780, madera:460, metal:210 };
+const SENT_PROPOSALS = [];
+// null = sin guerra activa; turns > 1 = se muestra en JUGAR
+const ACTIVE_WAR = { enemy: 'Ana', biome: 'Llanura', turns: 3 };
+const MAX_RES = 1000;
+
+const BIOME_COLOR = {
+  'Montaña':'#607d8b','Llanura':'#2e7d32','Selva':'#1b5e20','Desierto':'#e65100'
+};
+
+const NEWS = [
+  { turn:5, headline:'🤝⚔️ Ana y Lucas cerraron alianza militar', details:[
+    '🤝⚔️ Ana (Llanura) firmó alianza bélica con Lucas (Desierto D2)',
+    '⚠️ Sus ejércitos combinados superan tu 🛡️ defensa actual (×1.4)',
+    '💡 Buscá aliados o acumulá ⛰️ piedra para aguantar',
+  ]},
+  { turn:4, headline:'🤝🌲 Tu alianza comercial con Diego se activó', details:[
+    '🤝🌲 Alianza comercial con Diego (Selva) confirmada',
+    '🌲 +60 Madera por turno / das 🌾 −60 Alimento por turno',
+    '👥 Techo de población subiendo — más ⚔️ soldados posibles',
+  ]},
+  { turn:3, headline:'⚔️ Federico declaró guerra a Ana', details:[
+    '⚔️ Declaraste guerra a Ana (Llanura L1 y L2)',
+    '🛡️ Primer ataque bloqueado — Ana tiene mucha ⛰️ piedra',
+    '🤝⚔️ Carlos ofreció apoyo militar indirecto',
+  ]},
+  { turn:2, headline:'⚔️🏰 Carlos atacó a Valentina — Montaña en conflicto', details:[
+    '⚔️ Carlos conquistó 🏰 territorio M3 de Valentina brevemente',
+    '🛡️ Valentina resistió con la defensa natural de Montaña ⛰️',
+    '⚔️ Guerra en curso entre Carlos y Valentina',
+  ]},
+  { turn:1, headline:'🏰 Inicio de partida — 10 naciones desplegadas', details:[
+    '🌾 Federico (Llanura) arranca con alimento dominante',
+    '🤝🌲 Primera alianza comercial del mapa: Diego y Martín (Selva)',
+    '⚠️ Ana lidera el 📊 índice desde el inicio — peligro a largo plazo',
+  ]},
+];
+
+// ── INIT ────────────────────────────────────────────
+window.addEventListener('load', () => {
+  initResourceBars();
+  updateDerived();
+  buildSI();
+  buildNews();
+  const me = PLAYERS.find(p => p.id === ME);
+  document.getElementById('profile-shield').textContent = me.init;
+  document.getElementById('profile-shield').style.background = me.color;
+  document.getElementById('profile-nation').textContent = me.nation || me.name;
+  document.getElementById('profile-player').textContent = me.name;
+});
+
+function updateDerived() {
+  const res = RESOURCES;
+  const myBiome    = PLAYERS.find(p => p.id === ME).biome;
+  const pop        = Math.min(res.alimento, res.madera);
+  const soldierPct = Math.min(res.metal / (res.metal + 300), 0.65);
+  const soldiers   = Math.floor(pop * soldierPct);
+  const piedraMult = 1 + res.piedra / (res.piedra + 800);
+  const defMult    = piedraMult.toFixed(2);
+
+  const techoEl = document.getElementById('d-madera');
+  techoEl.textContent = res.madera;
+  techoEl.style.color = res.madera < res.alimento ? '#e74c3c' : '#27ae60';
+
+  document.getElementById('d-alimento').textContent = pop;
+  document.getElementById('d-metal').textContent = soldiers;
+  const defense = Math.round(soldiers * piedraMult);
+  document.getElementById('d-piedra').textContent   = defense;
+}
+
+function initResourceBars() {
+  Object.entries(RESOURCES).forEach(([res, val]) => {
+    const pct = Math.min(val / MAX_RES, 1);
+    const mask = document.getElementById('m-' + res);
+    if (mask) mask.style.width = Math.round((1 - pct) * 100) + '%';
+  });
+}
+
+// ── PANELS ──────────────────────────────────────────
+let active = null;
+
+function togglePanel(id) {
+  if (active === id) { closePanels(); return; }
+  openPanel(id);
+}
+
+function openPanel(id) {
+  if (active) {
+    document.getElementById('panel-' + active).classList.remove('open');
+  }
+  const ov = document.getElementById('overlay');
+  ov.classList.add('on');
+  document.getElementById('panel-' + id).classList.add('open');
+  active = id;
+  if (id === 'mi-nacion') buildMiNacion();
+  if (id === 'jugar') updateWarSection();
+  if (id === 'news') {
+    const b = document.getElementById('news-body');
+    requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
+  }
+}
+
+function closePanels() {
+  if (active) {
+    document.getElementById('panel-' + active).classList.remove('open');
+    active = null;
+  }
+  document.getElementById('overlay').classList.remove('on');
+}
+
+// ── TERRITORY CLICK ──────────────────────────────────
+function clickTerr(e, id) {
+  // ripple
+  const el = e.currentTarget;
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  el.appendChild(r);
+  setTimeout(() => r.remove(), 450);
+
+  const t = TERRITORIES[id];
+  if (!t) return;
+  const p = PLAYERS.find(x => x.id === t.player);
+  if (!p) return;
+
+  fillNationPanel(p, t, id);
+  openPanel('nation');
+}
+
+function fillNationPanel(p, t, id) {
+  const isMe = p.id === ME;
+  const myTerritories = Object.values(TERRITORIES).filter(t => t.player === ME).length;
+
+  let relClass = 'rel-neutral', relLabel = 'Neutral';
+  if (isMe)         { relClass = 'rel-ally';  relLabel = '🏠 Tu nación'; }
+  else if (p.enemy) { relClass = 'rel-enemy'; relLabel = '⚔ En guerra'; }
+  else if (p.tradeAlly) { relClass = 'rel-trade'; relLabel = '🤝 Alianza comercial'; }
+  else if (p.milAlly)   { relClass = 'rel-ally';  relLabel = '🛡 Alianza militar'; }
+
+  const theirTerrs = Object.values(TERRITORIES).filter(x => x.player === p.id).length;
+  const biomeColor = BIOME_COLOR[t.biome] || '#555';
+
+  // Alianzas y guerras del jugador (desde los arrays globales)
+  const allyLines = ALLIANCES
+    .filter(a => a.a === p.id || a.b === p.id)
+    .map(a => {
+      const otherId = a.a === p.id ? a.b : a.a;
+      const other = PLAYERS.find(x => x.id === otherId);
+      const icon = BIOME_ICON[other.biome] || '';
+      return a.type === 'trade'
+        ? `🤝${icon} ${other.name}`
+        : `🤝⚔️ ${other.name}`;
+    });
+  WARS.filter(w => w.a === p.id || w.b === p.id).forEach(w => {
+    const otherId = w.a === p.id ? w.b : w.a;
+    const other = PLAYERS.find(x => x.id === otherId);
+    allyLines.push(`⚔️ En guerra con ${other.name}`);
+  });
+  const allyHtml = allyLines.length
+    ? allyLines.map(l => `<div style="font-size:11px;color:#aaa;padding:2px 0">${l}</div>`).join('')
+    : '<span style="font-size:11px;color:#555">Sin alianzas conocidas</span>';
+
+  const actions = isMe ? `<p style="font-size:11px;color:#555;text-align:center;margin-top:14px">Esta es tu nación — Territorio ${id}</p>` : '';
+
+  document.getElementById('panel-nation-title').textContent = p.nation || 'Nación';
+  document.getElementById('nation-body').innerHTML = `
+    <div class="nation-hero">
+      <div class="big-flag" style="background:${p.color}">${p.init}</div>
+      <div class="nation-meta">
+        <h3>${p.name}</h3>
+        <p>Orden de turno: ${p.turnOrder}°</p>
+        <span class="biome-tag" style="background:${biomeColor}22;color:${biomeColor};border:1px solid ${biomeColor}44">${t.biome}</span>
+      </div>
+      <span class="rel-tag ${relClass}">${relLabel}</span>
+    </div>
+    <div class="info-line"><span>Territorios</span><span>${theirTerrs}</span></div>
+    <div class="info-line"><span>Población aprox.</span><span>~${Math.floor(300 + p.si * 3)}</span></div>
+    <div class="info-line" style="align-items:flex-start"><span style="padding-top:2px">Alianzas</span><div style="text-align:right">${allyHtml}</div></div>
+    <div class="info-line"><span>Estado de guerra</span><span>${p.enemy ? '⚔️ Con vos' : 'Sin conflicto'}</span></div>
+    <div class="info-line"><span>Índice de Supremacía</span><span style="color:#c8a84b;font-weight:bold">${p.si} pts</span></div>
+    ${actions}
+  `;
+}
+
+// ── SLIDERS ──────────────────────────────────────────
+function slideChange() {
+  const ids = ['soldados','trabajadores','comerciantes','constructores'];
+  let total = 0;
+  ids.forEach(id => {
+    const v = +document.getElementById('sl-' + id).value;
+    document.getElementById('pct-' + id).textContent = v + '%';
+    total += v;
+  });
+  const el = document.getElementById('total-line');
+  if (total === 100) {
+    el.textContent = 'Total: 100% ✓';
+    el.className = 'ok';
+  } else if (total < 100) {
+    el.textContent = 'Total: ' + total + '% — faltan ' + (100 - total) + '%';
+    el.className = '';
+  } else {
+    el.textContent = 'Total: ' + total + '% — exceso ' + (total - 100) + '%';
+    el.className = 'over';
+  }
+}
+
+// ── CONFIRM TURN ────────────────────────────────────
+function confirmTurn() {
+  const undecided = document.querySelectorAll('.proposal-btns[data-decided="false"]');
+  if (undecided.length > 0) {
+    document.getElementById('confirm-modal').classList.add('on');
+    return;
+  }
+  doConfirmTurn();
+}
+
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('on');
+}
+
+function doConfirmTurn() {
+  closePanels();
+  toast('✓ Turno confirmado — esperando a Diego…');
+  document.getElementById('btn-jugar').style.opacity = '0.35';
+  document.getElementById('btn-jugar').style.pointerEvents = 'none';
+  document.getElementById('status-text').textContent = 'Diego jugando…';
+  document.querySelector('.status-dot').style.background = '#27ae60';
+
+  // simulate next player done after 4s
+  setTimeout(() => {
+    document.getElementById('btn-jugar').style.opacity = '';
+    document.getElementById('btn-jugar').style.pointerEvents = '';
+    document.getElementById('status-text').textContent = '¡Es tu turno!';
+    document.querySelector('.status-dot').style.background = '#c0392b';
+    document.getElementById('turn-badge').textContent = 'Turno 6';
+    toast('🔔 ¡Es tu turno! — Turno 6');
+    // Producción Llanura (60 alimento producido - 60 a Diego, +60 madera de Diego)
+    const myBiome = PLAYERS.find(p => p.id === ME).biome;
+    const prod = BIOME_PROD[myBiome];
+    RESOURCES.alimento += prod.alimento;
+    RESOURCES.madera   += prod.madera + 60; // +60 de alianza comercial con Diego
+    RESOURCES.piedra   += prod.piedra;
+    RESOURCES.metal    += prod.metal;
+    document.getElementById('v-alimento').textContent = RESOURCES.alimento;
+    document.getElementById('v-madera').textContent = RESOURCES.madera;
+    document.getElementById('v-piedra').textContent = RESOURCES.piedra;
+    document.getElementById('v-metal').textContent = RESOURCES.metal;
+    initResourceBars();
+    updateDerived();
+  }, 4000);
+}
+
+// ── TRUEQUE CONFIG ───────────────────────────────────
+const BIOME_SPECIAL = { 'Montaña':'Piedra','Llanura':'Alimento','Selva':'Madera','Desierto':'Metal' };
+const BIOME_ICON    = { 'Montaña':'⛰️','Llanura':'🌾','Selva':'🌲','Desierto':'⚙️' };
+
+let truequeState = { give: null, ask: null };
+
+function openTruequeConfig(name, biome, color, init) {
+  truequeState = { give: null, ask: null, name, biome, color };
+  const myBiome    = PLAYERS.find(p => p.id === ME).biome;
+  const myRes      = BIOME_SPECIAL[myBiome];
+  const myIcon     = BIOME_ICON[myBiome];
+  const theirRes   = BIOME_SPECIAL[biome];
+  const theirIcon  = BIOME_ICON[biome];
+
+  document.getElementById('picker-header').firstChild.textContent = '🔄 Proponer trueque';
+  document.getElementById('picker-body').innerHTML = `
+    <div class="trueque-player-header">
+      <div class="picker-avatar" style="background:${color}">${init}</div>
+      <div class="picker-info">
+        <span class="picker-name">${name}</span>
+        <span class="picker-meta">${biome} · ${theirIcon} ${theirRes}</span>
+      </div>
+    </div>
+
+    <div class="trueque-section-title">${myIcon} Das (tu ${myRes})</div>
+    <div class="pct-group" id="give-group">
+      ${['15%','25%','50%','100%'].map(p =>
+        `<div class="pct-btn" onclick="selectPct(this,'give','${p}')">${p}</div>`
+      ).join('')}
+    </div>
+
+    <div class="trueque-section-title">${theirIcon} Pedís (su ${theirRes})</div>
+    <div class="pct-group" id="ask-group">
+      ${['15%','25%','50%','100%'].map(p =>
+        `<div class="pct-btn" onclick="selectPct(this,'ask','${p}')">${p}</div>`
+      ).join('')}
+    </div>
+
+    <div class="trueque-resumen" id="trueque-resumen">Elegí los porcentajes para ver el resumen</div>
+    <button class="confirm-btn" id="trueque-confirm-btn" style="opacity:0.4;pointer-events:none" onclick="confirmTrueque()">Proponer trueque</button>
+  `;
+}
+
+function selectPct(btn, side, pct) {
+  const group = document.getElementById(side + '-group');
+  group.querySelectorAll('.pct-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  truequeState[side] = pct;
+  updateTruequeResumen();
+}
+
+function updateTruequeResumen() {
+  const { give, ask, name, biome } = truequeState;
+  if (!give || !ask) return;
+  const myBiome  = PLAYERS.find(p => p.id === ME).biome;
+  const myRes    = BIOME_SPECIAL[myBiome];
+  const theirRes = BIOME_SPECIAL[biome];
+  document.getElementById('trueque-resumen').innerHTML =
+    `Vos das <strong style="color:#c8a84b">${give}</strong> de tu ${myRes}<br>
+     ${name} te da <strong style="color:#c8a84b">${ask}</strong> de su ${theirRes}`;
+  const btn = document.getElementById('trueque-confirm-btn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+function confirmTrueque() {
+  const { give, ask, name, biome } = truequeState;
+  const myBiome  = PLAYERS.find(p => p.id === ME).biome;
+  const myRes    = BIOME_SPECIAL[myBiome];
+  const theirRes = BIOME_SPECIAL[biome];
+  proposeAction('trueque', name);
+  toast(`🔄 Trueque propuesto: das ${give} ${myRes} · pedís ${ask} ${theirRes} a ${name}`);
+}
+
+// ── WAR SECTION ──────────────────────────────────────
+function updateWarSection() {
+  const section = document.getElementById('war-section');
+  if (ACTIVE_WAR && ACTIVE_WAR.turns > 1) {
+    section.style.display = '';
+    document.getElementById('war-banner-text').innerHTML =
+      `⚔️ &nbsp;En guerra con <strong style="color:#f88">${ACTIVE_WAR.enemy}</strong> (${ACTIVE_WAR.biome}) — ${ACTIVE_WAR.turns} turnos de conflicto`;
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// ── PROPOSAL RESPONSE ────────────────────────────────
+function handleProposal(btn, action) {
+  const container = btn.closest('.proposal-btns');
+  const btns = container.querySelectorAll('.abtn');
+
+  btns.forEach(b => {
+    b.style.opacity = '0.35';
+    b.style.background = '';
+    b.style.border = '';
+    b.style.color = '';
+    b.style.pointerEvents = 'auto';
+  });
+
+  btn.style.opacity = '1';
+  if (action === 'accept') {
+    btn.style.background = '#27ae60';
+    btn.style.border = '1.5px solid #27ae60';
+    btn.style.color = '#fff';
+  } else {
+    btn.style.background = '#444';
+    btn.style.border = '1.5px solid #555';
+    btn.style.color = '#ccc';
+  }
+
+  container.dataset.decided = 'true';
+}
+
+// ── PLAYER PICKER ────────────────────────────────────
+function openPicker(type) {
+  const titles = {
+    comercial: '🤝 Proponer alianza comercial',
+    militar:   '🛡 Proponer alianza militar',
+    trueque:   '🔄 Proponer trueque'
+  };
+  document.getElementById('picker-header').firstChild.textContent = titles[type];
+
+  const others = PLAYERS.filter(p => p.id !== ME);
+  document.getElementById('picker-body').innerHTML = others.map(p => {
+    let statusHtml = '';
+    if (p.enemy)      statusHtml = '<span class="picker-status-tag" style="background:rgba(231,76,60,0.15);color:#e74c3c">⚔ En guerra</span>';
+    else if (p.tradeAlly) statusHtml = '<span class="picker-status-tag" style="background:rgba(139,195,74,0.15);color:#8bc34a">🤝 Aliado com.</span>';
+    else if (p.milAlly)   statusHtml = '<span class="picker-status-tag" style="background:rgba(192,57,43,0.15);color:#e74c3c">🛡 Aliado mil.</span>';
+
+    const action = type === 'trueque'
+      ? `openTruequeConfig('${p.name}','${p.biome}','${p.color}','${p.init}')`
+      : `proposeAction('${type}','${p.name}')`;
+
+    return `
+      <div class="picker-row">
+        <div class="picker-avatar" style="background:${p.color}">${p.init}</div>
+        <div class="picker-info">
+          <span class="picker-name">${p.name}${statusHtml}</span>
+          <span class="picker-meta">${p.biome} · Índice ${p.si}</span>
+        </div>
+        <button class="abtn abtn-gold" onclick="${action}">Proponer</button>
+      </div>`;
+  }).join('');
+
+  openPanel('picker');
+}
+
+function proposeAction(type, playerName) {
+  const labels = {
+    comercial: 'Alianza comercial',
+    militar:   'Alianza militar',
+    trueque:   'Trueque'
+  };
+  const msgs = {
+    comercial: `📜 Propuesta de alianza comercial enviada a ${playerName}`,
+    militar:   `🛡 Propuesta de alianza militar enviada a ${playerName}`,
+    trueque:   `🔄 Propuesta de trueque enviada a ${playerName}`
+  };
+
+  const p = PLAYERS.find(x => x.name === playerName);
+  SENT_PROPOSALS.push({ type, playerName, label: labels[type], color: p ? p.color : '#888', biome: p ? p.biome : '' });
+  refreshSentProposals();
+
+  openPanel('jugar');
+  setTimeout(() => toast(msgs[type]), 200);
+}
+
+function refreshSentProposals() {
+  ['comercial','militar','trueque'].forEach(type => {
+    const list = document.getElementById(type + '-list');
+    if (!list) return;
+
+    // remove previously injected pending rows
+    list.querySelectorAll('.pending-row').forEach(el => el.remove());
+
+    const filtered = SENT_PROPOSALS.filter(pr => pr.type === type);
+    filtered.forEach(pr => {
+      const row = document.createElement('div');
+      row.className = 'agreement-row pending-row';
+      row.innerHTML = `
+        <div class="ag-dot" style="background:${pr.color};opacity:0.5"></div>
+        <span class="ag-text" style="color:#777">${pr.playerName} (${pr.biome}) — ${pr.label}</span>
+        <span style="font-size:9px;color:#555;flex-shrink:0;font-style:italic">pendiente</span>`;
+      list.appendChild(row);
+    });
+
+    if (type === 'trueque') list.style.display = filtered.length ? '' : 'none';
+  });
+}
+
+// ── BUILD MI NACIÓN PANEL ────────────────────────────
+function buildMiNacion() {
+  const res = RESOURCES;
+  const myBiome    = PLAYERS.find(p => p.id === ME).biome;
+  const pop        = Math.min(res.alimento, res.madera);
+  const soldierPct = Math.min(res.metal / (res.metal + 300), 0.65);
+  const soldiers   = Math.floor(pop * soldierPct);
+  const metalMult  = 1 + res.metal  / (res.metal  + 600);
+  const piedraMult = 1 + res.piedra / (res.piedra + 800);
+  const attack     = Math.round(soldiers * metalMult);
+  const defense    = Math.round(soldiers * piedraMult);
+
+  // Amenaza principal: Ana (enemiga y líder)
+  const anaAtk = 310;
+  const atkOk  = attack  >= anaAtk;
+  const defOk  = defense >= anaAtk;
+
+  const maderaNeed = res.alimento - res.madera;
+
+  // Alerts (máximo 3 líneas)
+  const alerts = [];
+  if (!defOk) alerts.push({ color:'#e74c3c', text:`Defensa (${defense}) no aguanta el ataque de Ana (~${anaAtk})` });
+  if (maderaNeed > 50) alerts.push({ color:'#e67e22', text:`Madera limita tu crecimiento — se desperdician ${maderaNeed} alimento por turno` });
+  if (!atkOk) alerts.push({ color:'#e67e22', text:`Tu ataque (${attack}) es menor que el de Ana (~${anaAtk})` });
+  else alerts.push({ color:'#27ae60', text:`Tu ataque (${attack}) supera la defensa estimada de Sofía (~${Math.round(anaAtk*0.6)})` });
+
+  document.getElementById('mi-nacion-body').innerHTML = `
+
+    <!-- ── Ataque / Defensa ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <div class="mn-stat-card" style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,${atkOk?'0.15':'0.35'})">
+        <div class="mn-stat-label">⚔ ATAQUE</div>
+        <div class="mn-stat-num" style="color:${atkOk?'#e74c3c':'#c0392b'}">${attack}</div>
+        <div class="mn-stat-cmp" style="color:${atkOk?'#27ae60':'#e74c3c'}">${atkOk?'✓':'✗'} Ana ~${anaAtk}</div>
+      </div>
+      <div class="mn-stat-card" style="background:rgba(41,128,185,0.08);border:1px solid rgba(41,128,185,${defOk?'0.15':'0.35'})">
+        <div class="mn-stat-label">🛡 DEFENSA</div>
+        <div class="mn-stat-num" style="color:${defOk?'#2980b9':'#1a5276'}">${defense}</div>
+        <div class="mn-stat-cmp" style="color:${defOk?'#27ae60':'#e74c3c'}">${defOk?'✓':'✗'} Ana ataca ~${anaAtk}</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:#444;text-align:center;margin-top:-12px;margin-bottom:16px">${soldiers} soldados · ${Math.round(soldierPct*100)}% de ${pop} hab.</div>
+
+    <!-- ── Recursos ── -->
+    <div style="margin-bottom:16px">
+      <div class="mn-res-row">
+        <span class="mn-res-icon">🌾</span>
+        <span class="mn-res-role">Alimento → sostiene población</span>
+        <span class="mn-res-val">${res.alimento}</span>
+        <span class="mn-res-pill pill-ok">Excedente</span>
+      </div>
+      <div class="mn-res-row">
+        <span class="mn-res-icon">🌲</span>
+        <span class="mn-res-role">Madera → techo de población</span>
+        <span class="mn-res-val">${res.madera}</span>
+        <span class="mn-res-pill pill-warn">Limitante</span>
+      </div>
+      <div class="mn-res-row">
+        <span class="mn-res-icon">⛰️</span>
+        <span class="mn-res-role">Piedra → ×${piedraMult.toFixed(2)} defensa</span>
+        <span class="mn-res-val">${res.piedra}</span>
+        <span class="mn-res-pill pill-bad">Bajo</span>
+      </div>
+      <div class="mn-res-row">
+        <span class="mn-res-icon">⚙️</span>
+        <span class="mn-res-role">Metal → ×${metalMult.toFixed(2)} ataque</span>
+        <span class="mn-res-val">${res.metal}</span>
+        <span class="mn-res-pill pill-bad">Bajo</span>
+      </div>
+    </div>
+
+    <!-- ── Alertas ── -->
+    <div style="border-top:1px solid rgba(255,255,255,0.05);padding-top:12px">
+      ${alerts.map(a => `
+        <div class="mn-alert">
+          <span class="mn-dot" style="background:${a.color}"></span>
+          <span>${a.text}</span>
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+// ── BUILD SI PANEL ────────────────────────────────────
+function buildSI() {
+  const sorted = [...PLAYERS].sort((a,b) => b.si - a.si);
+  const max = sorted[0].si;
+  let h = '';
+  sorted.forEach((p, i) => {
+    const fill = Math.round(p.si / max * 100);
+    const crown = i === 0 ? '👑' : i + 1;
+    const barColor = p.id === ME
+      ? 'linear-gradient(to right,#c8a84b,#f1c40f)'
+      : 'linear-gradient(to right,#2c4a70,#4a7ab5)';
+    const meTag = p.id === ME ? ' <em>(vos)</em>' : '';
+    h += `
+      <div class="si-row">
+        <span class="si-rank">${crown}</span>
+        <div class="si-flag" style="background:${p.color}">${p.init}</div>
+        <span class="si-name">${p.name}${meTag}</span>
+        <div class="si-bar-track">
+          <div class="si-bar-fill" style="width:${fill}%;background:${barColor}"></div>
+        </div>
+        <span class="si-val">${p.si}</span>
+      </div>`;
+  });
+  document.getElementById('si-body').innerHTML = h;
+}
+
+// ── BUILD NEWS ────────────────────────────────────────
+function buildNews() {
+  let h = '';
+  [...NEWS].reverse().forEach(n => {
+    const details = n.details.map(d => `<div class="news-detail-item">${d}</div>`).join('');
+    h += `
+      <div class="news-card" onclick="toggleNews(this)">
+        <div class="news-card-header">
+          <span class="news-turn-chip">Turno ${n.turn}</span>
+          <span class="news-headline">${n.headline}</span>
+          <span class="news-arrow">▼</span>
+        </div>
+        <div class="news-details">${details}</div>
+      </div>`;
+  });
+  document.getElementById('news-body').innerHTML = h;
+}
+
+function toggleNews(el) {
+  el.classList.toggle('expanded');
+}
+
+// ── TOAST ─────────────────────────────────────────────
+let toastT;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
